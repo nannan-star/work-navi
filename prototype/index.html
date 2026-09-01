@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>work-navi · 项目导航台原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============ Design Tokens (from ui-ux-pro-max: dev-tool dark, slate + run-green) ============ */
+  :root {
+    --bg:            #0F172A;  /* background */
+    --surface:       #131C31;  /* card surface */
+    --surface-2:     #1B2740;  /* raised / hover */
+    --muted:         #272F42;  /* muted block */
+    --border:        #2C3A55;  /* borders/dividers (visible on dark) */
+    --border-strong: #3B4C6B;
+    --fg:            #F1F5F9;  /* primary text ~ 14:1 on bg */
+    --fg-2:          #B4C0D3;  /* secondary text >= 4.5:1 */
+    --fg-3:          #7E8CA3;  /* tertiary / labels >= 3:1 */
+    --primary:       #6366F1;  /* indigo accent for links/focus */
+    --accent:        #22C55E;  /* run green - primary CTA */
+    --accent-fg:     #052e16;
+    --danger:        #EF4444;
+    --warn:          #F59E0B;
+    --info:          #38BDF8;
+
+    /* category hues */
+    --c-req:  #A78BFA;  /* 需求 */
+    --c-env:  #22D3EE;  /* 环境 */
+    --c-task: #F59E0B;  /* 任务 */
+    --c-proto:#F472B6;  /* 原型 */
+    --c-git:  #34D399;  /* Git */
+    --c-other:#94A3B8;  /* 其他 */
+
+    --radius:   14px;
+    --radius-sm: 9px;
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-2: 0 8px 24px -6px rgba(0,0,0,.55);
+    --ease: cubic-bezier(.22,.61,.36,1);
+    --sidebar-w: 268px;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: "Fira Sans", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, kbd, .mono { font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace; }
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: #4b5f84; }
+
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
+
+  /* ============ App shell ============ */
+  .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100dvh; }
+
+  /* ---- Sidebar ---- */
+  .sidebar {
+    background: #0C1526;
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100dvh;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand .logo {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--primary), #8B5CF6);
+    display: grid; place-items: center; color: #fff; flex: none;
+    box-shadow: var(--shadow-1);
+  }
+  .brand h1 { font-size: 16px; margin: 0; font-weight: 700; letter-spacing: .2px; }
+  .brand .sub { font-size: 11px; color: var(--fg-3); margin-top: 1px; }
+
+  .side-search { padding: 12px 14px; }
+  .side-search .box {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 10px;
+    color: var(--fg-3); font-size: 13px;
+  }
+  .side-search input {
+    border: 0; background: transparent; color: var(--fg); width: 100%;
+    font-size: 13px; outline: none;
+  }
+  .side-search kbd {
+    font-size: 11px; padding: 1px 6px; border: 1px solid var(--border-strong);
+    border-radius: 5px; color: var(--fg-3); background: var(--muted);
+  }
+
+  .side-label {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 20px 6px; font-size: 11px; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--fg-3); font-weight: 600;
+  }
+  .side-label .count { background: var(--muted); border-radius: 20px; padding: 1px 8px; font-size: 11px; }
+
+  /* global nav (tasks) */
+  .side-nav { padding: 6px 10px 2px; }
+  .nav-item {
+    width: 100%; display: flex; align-items: center; gap: 11px;
+    padding: 9px 11px; border-radius: var(--radius-sm); border: 0; background: transparent;
+    color: var(--fg-2); font-size: 14px; font-weight: 500; text-align: left;
+    transition: background .15s var(--ease), color .15s var(--ease);
+    min-height: 44px; position: relative;
+  }
+  .nav-item:hover { background: var(--surface-2); color: var(--fg); }
+  .nav-item.active { background: var(--surface-2); color: var(--fg); }
+  .nav-item.active::before {
+    content: ""; position: absolute; left: -10px; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 0 3px 3px 0; background: var(--warn);
+  }
+  .nav-item .name { flex: 1; }
+  .nav-item .wk-badge {
+    font-size: 11px; font-family: "Fira Code"; font-weight: 600;
+    background: var(--muted); color: var(--fg-2); border-radius: 6px; padding: 2px 7px;
+  }
+  .nav-item.active .wk-badge { background: rgba(245,158,11,.16); color: var(--warn); }
+
+  .proj-list { list-style: none; margin: 0; padding: 2px 10px; overflow-y: auto; flex: 1; }
+  .proj-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 11px; border-radius: var(--radius-sm);
+    color: var(--fg-2); font-size: 14px; font-weight: 500;
+    transition: background .15s var(--ease), color .15s var(--ease);
+    min-height: 44px; position: relative;
+  }
+  .proj-item:hover { background: var(--surface-2); color: var(--fg); }
+  .proj-item.active { background: var(--surface-2); color: var(--fg); }
+  .proj-item.active::before {
+    content: ""; position: absolute; left: -10px; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 0 3px 3px 0; background: var(--accent);
+  }
+  .proj-item .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .proj-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .proj-item .n { font-size: 11px; color: var(--fg-3); font-family: "Fira Code"; }
+
+  .side-foot { padding: 12px; border-top: 1px solid var(--border); }
+  .btn-new {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--surface); color: var(--fg); border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-sm); padding: 10px; font-size: 13px; font-weight: 500;
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  .btn-new:hover { border-color: var(--accent); color: var(--accent); background: var(--surface-2); }
+
+  /* ---- Main ---- */
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .topbar {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 28px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: rgba(15,23,42,.82);
+    backdrop-filter: blur(10px); z-index: 20;
+  }
+  .crumb { font-size: 13px; color: var(--fg-3); display: flex; align-items: center; gap: 7px; }
+  .crumb .cur { color: var(--fg); font-weight: 600; }
+  .topbar .spacer { flex: 1; }
+  .proj-head { padding: 26px 28px 8px; }
+  .proj-title { display: flex; align-items: center; gap: 12px; }
+  .proj-title h2 { font-size: 24px; margin: 0; font-weight: 700; letter-spacing: .2px; }
+  .proj-title .pdot { width: 12px; height: 12px; border-radius: 50%; }
+  .proj-desc { color: var(--fg-2); margin: 8px 0 0; max-width: 70ch; font-size: 14px; }
+  .proj-meta { display: flex; gap: 18px; margin-top: 14px; flex-wrap: wrap; }
+  .proj-meta .m { font-size: 12px; color: var(--fg-3); display: flex; align-items: center; gap: 6px; }
+  .proj-meta .m b { color: var(--fg-2); font-weight: 600; font-family: "Fira Code"; }
+
+  /* content grid: resources + notes */
+  .content { padding: 18px 28px 60px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
+  @media (max-width: 1180px) { .content { grid-template-columns: 1fr; } }
+
+  /* category filter chips */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 13px; border-radius: 20px; font-size: 13px; font-weight: 500;
+    background: var(--surface); border: 1px solid var(--border); color: var(--fg-2);
+    transition: background .15s, border-color .15s, color .15s; min-height: 34px;
+  }
+  .chip:hover { background: var(--surface-2); color: var(--fg); }
+  .chip.on { background: var(--surface-2); border-color: var(--border-strong); color: var(--fg); }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chip .num { font-size: 11px; color: var(--fg-3); font-family: "Fira Code"; }
+  .chip-manage { margin-left: auto; color: var(--fg-2); }
+  .chip-manage:hover { color: var(--fg); border-color: var(--border-strong); }
+
+  /* category section */
+  .cat { margin-bottom: 30px; }
+  .cat-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .cat-head .bar { width: 4px; height: 16px; border-radius: 3px; }
+  .cat-head h3 { font-size: 14px; margin: 0; font-weight: 700; letter-spacing: .3px; }
+  .cat-head .num { font-size: 12px; color: var(--fg-3); font-family: "Fira Code"; background: var(--muted); border-radius: 14px; padding: 1px 8px; }
+  .cat-head .add { margin-left: auto; color: var(--fg-2); font-size: 12px; display: flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); transition: background .15s, color .15s, border-color .15s; min-height: 32px; }
+  .cat-head .add:hover { background: var(--surface-2); color: var(--fg); border-color: var(--border-strong); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+
+  /* resource card */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 15px 16px 13px;
+    transition: border-color .18s var(--ease), transform .18s var(--ease), box-shadow .18s var(--ease);
+    position: relative;
+  }
+  .card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow-2); }
+  .card .row1 { display: flex; align-items: flex-start; gap: 10px; }
+  .card .favicon {
+    width: 32px; height: 32px; border-radius: 8px; flex: none;
+    background: var(--muted); display: grid; place-items: center; color: var(--fg-2);
+    border: 1px solid var(--border);
+  }
+  .card .ttl { flex: 1; min-width: 0; }
+  .card .ttl h4 { margin: 0; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card .ttl a.h4-link { color: var(--fg); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: color .15s; }
+  .card .ttl a.h4-link:hover { color: var(--info); }
+  .card .ttl a.h4-link .ext { opacity: 0; transition: opacity .15s; flex: none; }
+  .card:hover .ttl a.h4-link .ext { opacity: .7; }
+  .card .ttl .url { display: block; font-size: 12px; color: var(--info); font-family: "Fira Code"; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+  .card .ttl a.url:hover { text-decoration: underline; }
+  .card .kebab { color: var(--fg-3); width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center; border: 0; background: transparent; transition: background .15s, color .15s; flex: none; }
+  .card .kebab:hover { background: var(--surface-2); color: var(--fg); }
+
+  .card .note { font-size: 13px; color: var(--fg-2); margin: 10px 0 0; line-height: 1.55; }
+
+  /* credential rows */
+  .cred { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 11px; display: grid; gap: 7px; }
+  .cred .line { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+  .cred .k { color: var(--fg-3); width: 42px; flex: none; font-size: 12px; }
+  .cred .v { flex: 1; font-family: "Fira Code"; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: .3px; }
+  .cred .v.masked { letter-spacing: 2px; }
+  .icon-btn {
+    width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--fg-3); display: grid; place-items: center;
+    transition: color .15s, border-color .15s, background .15s; flex: none;
+  }
+  .icon-btn:hover { color: var(--fg); border-color: var(--border-strong); }
+  .icon-btn.copied { color: var(--accent); border-color: var(--accent); }
+
+  .card .foot { display: flex; align-items: center; gap: 8px; margin-top: 13px; }
+  .card .copy-conn {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 500;
+    color: var(--fg-2); background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; min-height: 34px; transition: color .15s, border-color .15s, background .15s;
+  }
+  .card .copy-conn:hover { color: var(--fg); border-color: var(--border-strong); }
+  .card .copy-conn.copied { color: var(--accent); border-color: var(--accent); }
+  .card .tag { margin-left: auto; font-size: 11px; color: var(--fg-3); font-family: "Fira Code"; }
+
+  /* notes panel */
+  .notes {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    position: sticky; top: 84px; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .notes-head { display: flex; align-items: center; gap: 9px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .notes-head h3 { font-size: 14px; margin: 0; font-weight: 700; }
+  .notes-head .bar { width: 4px; height: 16px; border-radius: 3px; background: var(--warn); }
+  .notes-head .saved { margin-left: auto; font-size: 11px; color: var(--fg-3); display: flex; align-items: center; gap: 5px; }
+  .notes-head .saved .d { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .notes-head .mini-link { margin-left: auto; font-size: 12px; color: var(--warn); background: transparent; border: 0; padding: 4px 6px; border-radius: 6px; font-weight: 500; transition: background .15s; }
+  .notes-head .mini-link:hover { background: var(--surface-2); }
+  .notes textarea {
+    border: 0; background: transparent; color: var(--fg); resize: none;
+    padding: 14px 16px; font-size: 14px; line-height: 1.7; min-height: 420px;
+    font-family: "Fira Code"; outline: none; width: 100%;
+  }
+  .notes textarea::placeholder { color: var(--fg-3); }
+  .notes-foot { padding: 9px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--fg-3); display: flex; gap: 14px; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
+  /* ============ Modal ============ */
+  .modal-scrim {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(5,10,20,.62); backdrop-filter: blur(3px);
+    display: grid; place-items: center; padding: 24px;
+    animation: scrim-in .18s var(--ease);
+  }
+  .modal-scrim[hidden] { display: none; }
+  @keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    width: 100%; max-width: 480px; max-height: calc(100dvh - 48px);
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: var(--radius); box-shadow: 0 24px 60px -12px rgba(0,0,0,.7);
+    display: flex; flex-direction: column; overflow: hidden;
+    animation: modal-in .22s var(--ease);
+  }
+  @keyframes modal-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+
+  .modal-head { display: flex; align-items: flex-start; gap: 12px; padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+  .modal-head-txt { flex: 1; }
+  .modal-head h3 { margin: 0; font-size: 18px; font-weight: 700; }
+  .modal-sub { margin: 4px 0 0; font-size: 13px; color: var(--fg-2); }
+  .modal-x { width: 34px; height: 34px; border-radius: 8px; border: 0; background: transparent; color: var(--fg-3); display: grid; place-items: center; transition: background .15s, color .15s; flex: none; }
+  .modal-x:hover { background: var(--surface-2); color: var(--fg); }
+
+  .modal-body { padding: 20px; overflow-y: auto; display: grid; gap: 18px; }
+  .field { display: grid; gap: 7px; border: 0; margin: 0; padding: 0; min-width: 0; }
+  .field label, .field legend { font-size: 13px; font-weight: 600; color: var(--fg); padding: 0; }
+  .field .req { color: var(--danger); }
+  .field input[type="text"], .field textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 11px 13px; color: var(--fg);
+    font-size: 14px; font-family: inherit; transition: border-color .15s, box-shadow .15s;
+    min-height: 44px;
+  }
+  .field textarea { resize: vertical; line-height: 1.6; min-height: 76px; }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.22); }
+  .field input::placeholder, .field textarea::placeholder { color: var(--fg-3); }
+  .hint { margin: 0; font-size: 12px; color: var(--fg-3); }
+
+  .field select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 13px; color: var(--fg); font-size: 14px; font-family: inherit; min-height: 44px; cursor: pointer; }
+  .field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.22); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
+  .pass-wrap { position: relative; display: flex; align-items: center; }
+  .pass-wrap input { width: 100%; padding-right: 42px; }
+  .pass-toggle { position: absolute; right: 6px; width: 32px; height: 32px; border-radius: 7px; border: 0; background: transparent; color: var(--fg-3); display: grid; place-items: center; transition: color .15s, background .15s; }
+  .pass-toggle:hover { color: var(--fg); background: var(--surface-2); }
+
+  .swatches { display: flex; gap: 12px; flex-wrap: wrap; }
+  .swatch { position: relative; cursor: pointer; }
+  .swatch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .swatch > span[aria-hidden] {
+    display: block; width: 30px; height: 30px; border-radius: 50%; background: var(--sw);
+    border: 2px solid transparent; box-shadow: 0 0 0 2px var(--surface), 0 0 0 2px var(--border);
+    transition: transform .12s var(--ease), box-shadow .15s;
+  }
+  .swatch:hover > span[aria-hidden] { transform: scale(1.08); }
+  .swatch input:checked + span[aria-hidden] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--sw); }
+  .swatch input:focus-visible + span[aria-hidden] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary); }
+  .swatch input:checked + span[aria-hidden]::after {
+    content: ""; position: absolute; left: 10px; top: 6px; width: 6px; height: 11px;
+    border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg);
+  }
+
+  .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border); background: var(--bg); }
+  .btn-ghost { background: transparent; border: 1px solid var(--border-strong); color: var(--fg-2); border-radius: var(--radius-sm); padding: 10px 18px; font-size: 14px; font-weight: 500; min-height: 42px; transition: background .15s, color .15s, border-color .15s; }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--fg); }
+  .btn-primary { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: var(--radius-sm); padding: 10px 20px; font-size: 14px; font-weight: 600; min-height: 42px; transition: filter .15s, transform .1s; }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:active { transform: scale(.97); }
+
+  .week-content {
+    display: block; width: 100%; box-sizing: border-box; resize: vertical;
+    margin: 0; white-space: pre-wrap; word-break: break-word;
+    font-family: "Fira Code"; font-size: 13.5px; line-height: 1.8; color: var(--fg);
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 16px; min-height: 300px; max-height: 55vh; overflow-y: auto; outline: none;
+  }
+  .week-content:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.22); }
+
+  /* ---- category manager ---- */
+  .cat-list { display: grid; gap: 8px; }
+  .cat-row { display: flex; align-items: center; gap: 11px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+  .cat-row .grip { color: var(--fg-3); cursor: grab; flex: none; }
+  .cat-row .cdot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+  .cat-row .cname { flex: 1; font-size: 14px; color: var(--fg); font-weight: 500; }
+  .cat-row .ccount { font-size: 11px; font-family: "Fira Code"; color: var(--fg-3); background: var(--muted); border-radius: 12px; padding: 1px 8px; }
+  .cat-row .cdel { width: 30px; height: 30px; border-radius: 7px; border: 0; background: transparent; color: var(--fg-3); display: grid; place-items: center; transition: background .15s, color .15s; flex: none; }
+  .cat-row .cdel:hover { background: rgba(239,68,68,.14); color: var(--danger); }
+  .cat-add-row { display: flex; gap: 8px; margin-top: 4px; }
+  .cat-add-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; color: var(--fg); font-size: 14px; min-height: 42px; }
+  .cat-add-row input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.22); }
+  .cat-add-row .cadd-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--fg); border-radius: var(--radius-sm); padding: 0 15px; font-size: 13px; font-weight: 500; transition: background .15s; }
+  .cat-add-row .cadd-btn:hover { background: var(--muted); }
+
+  svg { display: block; }
+  .badge-icon { width: 18px; height: 18px; }
+
+  /* ============ View switching ============ */
+  .view[hidden] { display: none; }
+
+  /* ---- Tasks view ---- */
+  .task-wrap { padding: 0 28px 60px; }
+  .task-head { padding: 26px 0 8px; display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .task-head .tt { flex: 1; min-width: 220px; }
+  .task-head h2 { font-size: 24px; margin: 0; font-weight: 700; display: flex; align-items: center; gap: 11px; }
+  .task-head h2 .bar { width: 5px; height: 22px; border-radius: 3px; background: var(--warn); }
+  .task-head .wk-sub { color: var(--fg-2); margin: 8px 0 0 16px; font-size: 14px; font-family: "Fira Code"; }
+  .task-head .actions { display: flex; gap: 10px; align-items: center; }
+  .btn-outline { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border-strong); color: var(--fg); border-radius: var(--radius-sm); padding: 9px 15px; font-size: 13px; font-weight: 500; min-height: 42px; transition: background .15s, border-color .15s, color .15s; }
+  .btn-outline:hover { background: var(--surface-2); border-color: var(--fg-3); }
+  .btn-outline.on { border-color: var(--warn); color: var(--warn); }
+
+  /* current week editor */
+  .week-editor { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 18px; }
+  .we-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .we-head .chip-week { font-family: "Fira Code"; font-size: 12px; font-weight: 600; background: rgba(245,158,11,.16); color: var(--warn); border-radius: 6px; padding: 3px 9px; }
+  .we-head .rng { color: var(--fg-2); font-size: 13px; }
+  .we-head .saved { margin-left: auto; font-size: 12px; color: var(--fg-3); display: flex; align-items: center; gap: 6px; }
+  .we-head .saved .d { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .week-editor textarea { width: 100%; border: 0; background: transparent; color: var(--fg); resize: vertical; padding: 18px; font-size: 14px; line-height: 1.8; min-height: 340px; font-family: "Fira Code"; outline: none; }
+  .week-editor textarea::placeholder { color: var(--fg-3); }
+  .we-foot { padding: 10px 18px; border-top: 1px solid var(--border); font-size: 12px; color: var(--fg-3); display: flex; gap: 16px; background: var(--bg); }
+
+  /* history list */
+  .history { margin-top: 22px; }
+  .history-title { font-size: 13px; font-weight: 600; color: var(--fg-3); letter-spacing: .6px; text-transform: uppercase; margin: 0 0 14px; }
+  .year-group { margin-bottom: 26px; }
+  .year-label { font-family: "Fira Code"; font-size: 13px; color: var(--fg-2); font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .year-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .week-row {
+    display: flex; align-items: center; gap: 14px; width: 100%;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 14px 16px; margin-bottom: 10px; text-align: left;
+    transition: border-color .15s var(--ease), transform .15s var(--ease), background .15s;
+  }
+  .week-row:hover { border-color: var(--border-strong); transform: translateX(2px); background: var(--surface-2); }
+  .week-row.current { border-color: rgba(245,158,11,.5); }
+  .week-row .wno { font-family: "Fira Code"; font-size: 13px; font-weight: 700; color: var(--fg); background: var(--muted); border-radius: 7px; padding: 6px 10px; min-width: 52px; text-align: center; flex: none; }
+  .week-row.current .wno { background: rgba(245,158,11,.16); color: var(--warn); }
+  .week-row .wmeta { flex: 1; min-width: 0; }
+  .week-row .wrange { font-size: 14px; font-weight: 600; color: var(--fg); }
+  .week-row .wexcerpt { font-size: 12.5px; color: var(--fg-2); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .week-row .wtag { font-size: 11px; font-family: "Fira Code"; color: var(--fg-3); display: flex; align-items: center; gap: 5px; flex: none; }
+  .week-row .wtag.cur { color: var(--warn); }
+  .week-row .chev { color: var(--fg-3); flex: none; }
+  .week-row:hover .chev { color: var(--fg); }
+</style>
+</head>
+<body>
+<a href="#main" class="sr-only">跳到主内容</a>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" aria-label="项目导航">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      </div>
+      <div>
+        <h1>work-navi</h1>
+        <div class="sub">项目资源导航台</div>
+      </div>
+    </div>
+
+    <div class="side-search">
+      <div class="box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="搜索项目 / 资源…" aria-label="搜索项目或资源" />
+        <kbd>/</kbd>
+      </div>
+    </div>
+
+    <nav class="side-nav" aria-label="主导航">
+      <button class="nav-item" data-view="tasks">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span class="name">任务周记</span>
+        <span class="wk-badge">W36</span>
+      </button>
+    </nav>
+
+    <div class="side-label">
+      <span>我的项目</span>
+      <span class="count">3</span>
+    </div>
+
+    <ul class="proj-list">
+      <li><div class="proj-item active" tabindex="0" data-view="project"><span class="dot" style="background:var(--primary)"></span><span class="name">运营平台</span><span class="n">12</span></div></li>
+      <li><div class="proj-item" tabindex="0" data-view="project"><span class="dot" style="background:var(--accent)"></span><span class="name">SWAS星基</span><span class="n">8</span></div></li>
+      <li><div class="proj-item" tabindex="0" data-view="project"><span class="dot" style="background:var(--info)"></span><span class="name">SWAS地基</span><span class="n">6</span></div></li>
+    </ul>
+
+    <div class="side-foot">
+      <button class="btn-new">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        新建项目
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main" id="main">
+    <!-- ===== VIEW: 项目 ===== -->
+    <div class="view" id="project-view">
+    <div class="topbar">
+      <nav class="crumb" aria-label="面包屑">
+        <span>项目</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="cur">运营平台</span>
+      </nav>
+      <div class="spacer"></div>
+      <button class="chip"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>编辑项目</button>
+    </div>
+
+    <header class="proj-head">
+      <div class="proj-title">
+        <span class="pdot" style="background:var(--primary)"></span>
+        <h2>运营平台</h2>
+      </div>
+      <p class="proj-desc">内部运营管理平台。集中记录各环境地址、需求文档、原型与部署凭证。</p>
+      <div class="proj-meta">
+        <span class="m"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>资源 <b>12</b> 条</span>
+        <span class="m"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>更新于 <b>2h 前</b></span>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- LEFT: resources -->
+      <section aria-label="资源列表">
+        <div class="filters" role="group" aria-label="按分类筛选">
+          <button class="chip on"><span>全部</span><span class="num">12</span></button>
+          <button class="chip"><span class="dot" style="background:var(--c-req)"></span>需求<span class="num">3</span></button>
+          <button class="chip"><span class="dot" style="background:var(--c-env)"></span>环境<span class="num">4</span></button>
+          <button class="chip"><span class="dot" style="background:var(--c-task)"></span>任务<span class="num">1</span></button>
+          <button class="chip"><span class="dot" style="background:var(--c-proto)"></span>原型<span class="num">2</span></button>
+          <button class="chip"><span class="dot" style="background:var(--c-git)"></span>Git<span class="num">2</span></button>
+          <button class="chip chip-manage" id="open-cat-manage" aria-label="管理分类"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>管理分类</button>
+        </div>
+
+        <!-- category: 环境 -->
+        <div class="cat">
+          <div class="cat-head">
+            <span class="bar" style="background:var(--c-env)"></span>
+            <h3>环境</h3>
+            <span class="num">4</span>
+            <button class="add"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加</button>
+          </div>
+          <div class="cards">
+
+            <!-- card with credentials -->
+            <article class="card">
+              <div class="row1">
+                <div class="favicon"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
+                <div class="ttl">
+                  <h4><a class="h4-link" href="https://admin.shop.example.com" target="_blank" rel="noopener">生产环境 · 后台<svg class="ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+                  <a class="url" href="https://admin.shop.example.com" target="_blank" rel="noopener">https://admin.shop.example.com</a>
+                </div>
+                <button class="kebab" aria-label="更多操作"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+              </div>
+              <p class="note">生产管理后台，改配置前先在群里同步。</p>
+              <div class="cred">
+                <div class="line">
+                  <span class="k">账号</span>
+                  <span class="v">ops_admin</span>
+                  <button class="icon-btn" aria-label="复制账号"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                </div>
+                <div class="line">
+                  <span class="k">密码</span>
+                  <span class="v masked">••••••••••</span>
+                  <button class="icon-btn" aria-label="显示密码"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                  <button class="icon-btn" aria-label="复制密码"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                </div>
+              </div>
+              <div class="foot">
+                <span class="tag">prod</span>
+              </div>
+            </article>
+
+            <!-- card: test env -->
+            <article class="card">
+              <div class="row1">
+                <div class="favicon"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"/></svg></div>
+                <div class="ttl">
+                  <h4><a class="h4-link" href="https://test.shop.example.com" target="_blank" rel="noopener">测试环境<svg class="ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+                  <a class="url" href="https://test.shop.example.com" target="_blank" rel="noopener">https://test.shop.example.com</a>
+                </div>
+                <button class="kebab" aria-label="更多操作"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+              </div>
+              <p class="note">QA 联调环境，每晚 2 点自动部署最新 develop 分支。</p>
+              <div class="cred">
+                <div class="line">
+                  <span class="k">账号</span>
+                  <span class="v">tester</span>
+                  <button class="icon-btn" aria-label="复制账号"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                </div>
+                <div class="line">
+                  <span class="k">密码</span>
+                  <span class="v masked">••••••</span>
+                  <button class="icon-btn" aria-label="显示密码"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                  <button class="icon-btn" aria-label="复制密码"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                </div>
+              </div>
+              <div class="foot">
+                <span class="tag">test</span>
+              </div>
+            </article>
+
+            <!-- card: DB (no url) -->
+            <article class="card">
+              <div class="row1">
+                <div class="favicon"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></div>
+                <div class="ttl">
+                  <h4>MySQL 主库</h4>
+                  <span class="url mono">10.20.3.15:3306 · shop_order</span>
+                </div>
+                <button class="kebab" aria-label="更多操作"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+              </div>
+              <div class="cred">
+                <div class="line">
+                  <span class="k">账号</span>
+                  <span class="v">root_ro</span>
+                  <button class="icon-btn" aria-label="复制账号"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                </div>
+                <div class="line">
+                  <span class="k">密码</span>
+                  <span class="v masked">••••••••</span>
+                  <button class="icon-btn" aria-label="显示密码"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                  <button class="icon-btn" aria-label="复制密码"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                </div>
+              </div>
+              <div class="foot">
+                <button class="copy-conn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制连接串</button>
+                <span class="tag">db</span>
+              </div>
+            </article>
+
+          </div>
+        </div>
+
+        <!-- category: 需求 -->
+        <div class="cat">
+          <div class="cat-head">
+            <span class="bar" style="background:var(--c-req)"></span>
+            <h3>需求</h3>
+            <span class="num">3</span>
+            <button class="add"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加</button>
+          </div>
+          <div class="cards">
+            <article class="card">
+              <div class="row1">
+                <div class="favicon"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+                <div class="ttl">
+                  <h4><a class="h4-link" href="https://doc.example.com/prd/order-v2" target="_blank" rel="noopener">PRD · 订单域重构<svg class="ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+                  <a class="url" href="https://doc.example.com/prd/order-v2" target="_blank" rel="noopener">https://doc.example.com/prd/order-v2</a>
+                </div>
+                <button class="kebab" aria-label="更多操作"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+              </div>
+              <p class="note">v2.3 已评审通过，附带状态机流转图。</p>
+              <div class="foot">
+                <span class="tag">doc</span>
+              </div>
+            </article>
+            <article class="card">
+              <div class="row1">
+                <div class="favicon"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="ttl">
+                  <h4><a class="h4-link" href="https://apifox.com/team/shop" target="_blank" rel="noopener">接口文档 (Apifox)<svg class="ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+                  <a class="url" href="https://apifox.com/team/shop" target="_blank" rel="noopener">https://apifox.com/team/shop</a>
+                </div>
+                <button class="kebab" aria-label="更多操作"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+              </div>
+              <div class="foot">
+                <span class="tag">api</span>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <!-- category: 原型 -->
+        <div class="cat">
+          <div class="cat-head">
+            <span class="bar" style="background:var(--c-proto)"></span>
+            <h3>原型</h3>
+            <span class="num">2</span>
+            <button class="add"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加</button>
+          </div>
+          <div class="cards">
+            <article class="card">
+              <div class="row1">
+                <div class="favicon"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+                <div class="ttl">
+                  <h4><a class="h4-link" href="https://figma.com/file/xxx/shop-admin" target="_blank" rel="noopener">Figma · 后台原型<svg class="ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+                  <a class="url" href="https://figma.com/file/xxx/shop-admin" target="_blank" rel="noopener">https://figma.com/file/xxx/shop-admin</a>
+                </div>
+                <button class="kebab" aria-label="更多操作"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+              </div>
+              <p class="note">最新交互稿在 "v3 - 终稿" 页面。</p>
+              <div class="foot">
+                <span class="tag">figma</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: notes -->
+      <aside class="notes" aria-label="本周任务速记">
+        <div class="notes-head">
+          <span class="bar"></span>
+          <h3>本周任务</h3>
+          <span class="saved"><span class="d"></span>已保存</span>
+          <button class="mini-link" data-goto-tasks>历史 →</button>
+        </div>
+        <label class="sr-only" for="task-notes">本周任务内容（可直接编辑）</label>
+        <textarea id="task-notes" spellcheck="false">## 本周（W36 · 8/31–9/6）
+- [x] 订单状态机重构 PR 合并
+- [ ] 库存扣减防超卖压测（周四前）
+- [ ] 联调支付回调 → 找老王要沙箱密钥
+
+## 备忘
+- 生产发布窗口：每周二/四 20:00</textarea>
+        <div class="notes-foot">
+          <span>直接编辑本周 · 失焦自动保存</span>
+        </div>
+      </aside>
+    </div>
+    </div><!-- /project-view -->
+
+    <!-- ===== VIEW: 任务周记 ===== -->
+    <div class="view" id="tasks-view" hidden>
+      <div class="topbar">
+        <nav class="crumb" aria-label="面包屑">
+          <span>任务周记</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span class="cur">2026 · 第 36 周</span>
+        </nav>
+        <div class="spacer"></div>
+      </div>
+
+      <div class="task-wrap">
+        <header class="task-head">
+          <div class="tt">
+            <h2><span class="bar"></span>任务周记</h2>
+            <p class="wk-sub">2026 年第 36 周 · 8月31日 – 9月6日（本周）</p>
+          </div>
+          <div class="actions">
+            <button class="btn-outline"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>编辑本周</button>
+          </div>
+        </header>
+
+        <!-- 当前周编辑器 -->
+        <section class="week-editor" aria-label="本周任务编辑">
+          <div class="we-head">
+            <span class="chip-week">W36</span>
+            <span class="rng">8月31日 – 9月6日</span>
+            <span class="saved"><span class="d"></span>已自动保存 · 刚刚</span>
+          </div>
+          <label class="sr-only" for="week-current">本周任务内容</label>
+          <textarea id="week-current" spellcheck="false">## 本周重点
+- [x] 订单状态机重构 PR 合并
+- [ ] 库存扣减防超卖压测（周四前）
+- [ ] 联调支付回调 → 找老王要沙箱密钥
+
+## 待排期
+- 商品域缓存改造
+- 老接口下线（等前端全量切换）
+
+## 备忘
+- 生产发布窗口：每周二/四 20:00
+- prod 密码下次轮换：3/15</textarea>
+          <div class="we-foot">
+            <span>Markdown</span>
+            <span>失焦自动保存到当前周</span>
+          </div>
+        </section>
+
+        <!-- 历史周记录 -->
+        <section class="history" aria-label="历史周记录">
+          <h3 class="history-title">历史记录</h3>
+
+          <div class="year-group">
+            <div class="year-label">2026</div>
+
+            <button class="week-row current">
+              <span class="wno">W36</span>
+              <span class="wmeta">
+                <span class="wrange">8月31日 – 9月6日</span>
+                <span class="wexcerpt">订单状态机重构 PR 合并；库存防超卖压测；联调支付回调…</span>
+              </span>
+              <span class="wtag cur"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>本周</span>
+              <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <button class="week-row">
+              <span class="wno">W35</span>
+              <span class="wmeta">
+                <span class="wrange">8月24日 – 8月30日</span>
+                <span class="wexcerpt">完成商品详情页重构；修复库存超卖 bug；周会评审 PRD v2.3。</span>
+              </span>
+              <span class="wtag">3 项</span>
+              <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <button class="week-row">
+              <span class="wno">W34</span>
+              <span class="wmeta">
+                <span class="wrange">8月17日 – 8月23日</span>
+                <span class="wexcerpt">搭建 CI/CD 流水线；接入监控告警；整理环境配置文档。</span>
+              </span>
+              <span class="wtag">5 项</span>
+              <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <button class="week-row">
+              <span class="wno">W33</span>
+              <span class="wmeta">
+                <span class="wrange">8月10日 – 8月16日</span>
+                <span class="wexcerpt">项目启动；技术选型评审；拆分订单/商品/库存三大域。</span>
+              </span>
+              <span class="wtag">4 项</span>
+              <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div><!-- /tasks-view -->
+  </div>
+
+<!-- ============ MODAL: 新建/编辑项目 ============ -->
+<div class="modal-scrim" id="proj-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+  <div class="modal" role="document">
+    <header class="modal-head">
+      <div class="modal-head-txt">
+        <h3 id="modal-title">新建项目</h3>
+        <p class="modal-sub">填写项目的基本信息，创建后可继续添加资源。</p>
+      </div>
+      <button class="modal-x" aria-label="关闭弹窗" data-close><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </header>
+
+    <form class="modal-body" id="proj-form" novalidate>
+      <!-- 项目名称 -->
+      <div class="field">
+        <label for="f-name">项目名称 <span class="req" aria-hidden="true">*</span></label>
+        <input id="f-name" name="name" type="text" placeholder="如：运营平台" autocomplete="off" required maxlength="40" value="运营平台" />
+        <p class="hint" id="name-hint">在侧边栏显示，最多 40 字。</p>
+      </div>
+
+      <!-- 项目描述 -->
+      <div class="field">
+        <label for="f-desc">项目描述</label>
+        <textarea id="f-desc" name="desc" rows="3" placeholder="一句话说明这个项目是做什么的（可选）" maxlength="200">内部运营管理平台。集中记录各环境地址、需求文档、原型与部署凭证。</textarea>
+        <p class="hint">选填，帮助你日后回忆项目背景。</p>
+      </div>
+
+      <!-- 标识颜色 -->
+      <fieldset class="field">
+        <legend>标识颜色</legend>
+        <div class="swatches" role="radiogroup" aria-label="选择项目标识颜色">
+          <label class="swatch" style="--sw:var(--primary)"><input type="radio" name="color" value="primary" checked /><span aria-hidden="true"></span><span class="sr-only">靛蓝</span></label>
+          <label class="swatch" style="--sw:var(--accent)"><input type="radio" name="color" value="accent" /><span aria-hidden="true"></span><span class="sr-only">绿色</span></label>
+          <label class="swatch" style="--sw:var(--info)"><input type="radio" name="color" value="info" /><span aria-hidden="true"></span><span class="sr-only">天蓝</span></label>
+          <label class="swatch" style="--sw:var(--warn)"><input type="radio" name="color" value="warn" /><span aria-hidden="true"></span><span class="sr-only">橙色</span></label>
+          <label class="swatch" style="--sw:var(--c-proto)"><input type="radio" name="color" value="pink" /><span aria-hidden="true"></span><span class="sr-only">粉色</span></label>
+          <label class="swatch" style="--sw:var(--c-req)"><input type="radio" name="color" value="purple" /><span aria-hidden="true"></span><span class="sr-only">紫色</span></label>
+        </div>
+        <p class="hint">用于侧边栏和详情页的圆点标识。</p>
+      </fieldset>
+    </form>
+
+    <footer class="modal-foot">
+      <button type="button" class="btn-ghost" data-close>取消</button>
+      <button type="submit" form="proj-form" class="btn-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        保存项目
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ============ MODAL: 分类管理 ============ -->
+<div class="modal-scrim" id="cat-modal" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" hidden>
+  <div class="modal" role="document" style="max-width:460px">
+    <header class="modal-head">
+      <div class="modal-head-txt">
+        <h3 id="cat-modal-title">管理分类</h3>
+        <p class="modal-sub">增删、重命名资源分类。已有资源的分类不能直接删除。</p>
+      </div>
+      <button class="modal-x" aria-label="关闭弹窗" data-catclose><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </header>
+    <div class="modal-body">
+      <div class="cat-list" id="cat-list">
+        <div class="cat-row"><svg class="grip" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg><span class="cdot" style="background:var(--c-req)"></span><span class="cname">需求</span><span class="ccount">3 项</span><button class="cdel" aria-label="删除分类" disabled title="有资源，不能删除"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        <div class="cat-row"><svg class="grip" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg><span class="cdot" style="background:var(--c-env)"></span><span class="cname">环境</span><span class="ccount">4 项</span><button class="cdel" aria-label="删除分类" disabled title="有资源，不能删除"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        <div class="cat-row"><svg class="grip" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg><span class="cdot" style="background:var(--c-task)"></span><span class="cname">任务</span><span class="ccount">1 项</span><button class="cdel" aria-label="删除分类" disabled title="有资源，不能删除"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        <div class="cat-row"><svg class="grip" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg><span class="cdot" style="background:var(--c-proto)"></span><span class="cname">原型</span><span class="ccount">2 项</span><button class="cdel" aria-label="删除分类" disabled title="有资源，不能删除"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        <div class="cat-row"><svg class="grip" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg><span class="cdot" style="background:var(--c-git)"></span><span class="cname">Git</span><span class="ccount">2 项</span><button class="cdel" aria-label="删除分类" disabled title="有资源，不能删除"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+      </div>
+      <div class="cat-add-row">
+        <input type="text" id="new-cat-name" placeholder="新分类名称，如：监控 / 文档" aria-label="新分类名称" />
+        <button class="cadd-btn" id="add-cat-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加</button>
+      </div>
+    </div>
+    <footer class="modal-foot">
+      <button type="button" class="btn-primary" data-catclose><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>完成</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ============ MODAL: 添加/编辑资源 ============ -->
+<div class="modal-scrim" id="res-modal" role="dialog" aria-modal="true" aria-labelledby="res-modal-title" hidden>
+  <div class="modal" role="document" style="max-width:520px">
+    <header class="modal-head">
+      <div class="modal-head-txt">
+        <h3 id="res-modal-title">添加资源</h3>
+        <p class="modal-sub" id="res-modal-sub">记录一条资源地址，可附带备注和账号密码。</p>
+      </div>
+      <button class="modal-x" aria-label="关闭弹窗" data-resclose><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </header>
+    <form class="modal-body" id="res-form" novalidate>
+      <div class="field">
+        <label for="r-cat">分类 <span class="req" aria-hidden="true">*</span></label>
+        <select id="r-cat" name="category" required>
+          <option value="需求">需求</option>
+          <option value="环境" selected>环境</option>
+          <option value="任务">任务</option>
+          <option value="原型">原型</option>
+          <option value="Git">Git</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="r-title">标题 <span class="req" aria-hidden="true">*</span></label>
+        <input id="r-title" name="title" type="text" placeholder="如：生产环境 · 后台" autocomplete="off" required maxlength="60" />
+      </div>
+      <div class="field">
+        <label for="r-url">地址 URL</label>
+        <input id="r-url" name="url" type="url" placeholder="https:// 或 IP:端口（选填）" autocomplete="off" inputmode="url" />
+        <p class="hint">填了就能在卡片上点标题直接跳转。</p>
+      </div>
+      <div class="field">
+        <label for="r-note">备注</label>
+        <textarea id="r-note" name="note" rows="2" placeholder="使用说明、注意事项等（选填）" maxlength="200"></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="r-user">用户名</label>
+          <input id="r-user" name="username" type="text" placeholder="账号（选填）" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="r-pass">密码</label>
+          <div class="pass-wrap">
+            <input id="r-pass" name="password" type="password" placeholder="密码（选填）" autocomplete="off" />
+            <button type="button" class="pass-toggle" aria-label="显示密码" id="r-pass-toggle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+          <p class="hint">明文保存 · 仅本机使用</p>
+        </div>
+      </div>
+    </form>
+    <footer class="modal-foot">
+      <button type="button" class="btn-ghost" data-resclose>取消</button>
+      <button type="submit" form="res-form" class="btn-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>保存资源</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ============ MODAL: 历史周详情 ============ -->
+<div class="modal-scrim" id="week-modal" role="dialog" aria-modal="true" aria-labelledby="week-modal-title" hidden>
+  <div class="modal" role="document" style="max-width:560px">
+    <header class="modal-head">
+      <div class="modal-head-txt">
+        <h3 id="week-modal-title">2026 · 第 35 周</h3>
+        <p class="modal-sub" id="week-modal-range">8月24日 – 8月30日</p>
+      </div>
+      <button class="modal-x" aria-label="关闭弹窗" data-wclose><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </header>
+    <div class="modal-body">
+      <label class="sr-only" for="week-modal-content">历史周任务内容（可编辑）</label>
+      <textarea id="week-modal-content" class="week-content" spellcheck="false"></textarea>
+    </div>
+    <footer class="modal-foot">
+      <button type="button" class="btn-ghost" data-wclose>取消</button>
+      <button type="button" class="btn-primary" id="week-save"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>保存修改</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+  // ---- prototype-only interactions (真实项目里由 React 承担) ----
+
+  // ---- 视图切换：项目视图 <-> 任务周记视图 ----
+  const projectView = document.getElementById('project-view');
+  const tasksView = document.getElementById('tasks-view');
+  const navTasks = document.querySelector('.nav-item[data-view="tasks"]');
+
+  function showTasks() {
+    projectView.hidden = true;
+    tasksView.hidden = false;
+    navTasks.classList.add('active');
+    document.querySelectorAll('.proj-item').forEach(i => i.classList.remove('active'));
+    document.getElementById('main').scrollTop = 0;
+  }
+  function showProject(item) {
+    tasksView.hidden = true;
+    projectView.hidden = false;
+    navTasks.classList.remove('active');
+    document.querySelectorAll('.proj-item').forEach(i => i.classList.remove('active'));
+    if (item) item.classList.add('active');
+    document.getElementById('main').scrollTop = 0;
+  }
+  navTasks.addEventListener('click', showTasks);
+  const gotoTasks = document.querySelector('[data-goto-tasks]');
+  if (gotoTasks) gotoTasks.addEventListener('click', showTasks);
+
+  // ---- 历史周详情弹窗 ----
+  const weekModal = document.getElementById('week-modal');
+  const wkTitle = document.getElementById('week-modal-title');
+  const wkRange = document.getElementById('week-modal-range');
+  const wkContent = document.getElementById('week-modal-content');
+  let wkLastFocused = null;
+
+  // 原型示例数据（真实项目从后端按周拉取）
+  const weekData = {
+    W36: { title: '2026 · 第 36 周', range: '8月31日 – 9月6日（本周）', body: '## 本周重点\n- [x] 订单状态机重构 PR 合并\n- [ ] 库存扣减防超卖压测（周四前）\n- [ ] 联调支付回调 → 找老王要沙箱密钥\n\n## 待排期\n- 商品域缓存改造\n- 老接口下线（等前端全量切换）\n\n## 备忘\n- 生产发布窗口：每周二/四 20:00' },
+    W35: { title: '2026 · 第 35 周', range: '8月24日 – 8月30日', body: '## 本周重点\n- [x] 完成商品详情页重构\n- [x] 修复库存超卖 bug（乐观锁 + 重试）\n- [x] 周会评审 PRD v2.3，已通过\n\n## 备忘\n- 下周开始接支付回调' },
+    W34: { title: '2026 · 第 34 周', range: '8月17日 – 8月23日', body: '## 本周重点\n- [x] 搭建 CI/CD 流水线（GitLab Runner）\n- [x] 接入监控告警（Prometheus + 钉钉）\n- [x] 整理三大环境配置文档\n- [x] 数据库读写分离验证\n- [x] 压测基线报告' },
+    W33: { title: '2026 · 第 33 周', range: '8月10日 – 8月16日', body: '## 本周重点\n- [x] 项目启动会\n- [x] 技术选型评审（Spring Cloud + Nacos）\n- [x] 拆分订单/商品/库存三大域\n- [x] 搭建脚手架 & 代码规范' },
+  };
+
+  function openWeek(key) {
+    const d = weekData[key];
+    if (!d) return;
+    wkLastFocused = document.activeElement;
+    wkTitle.textContent = d.title;
+    wkRange.textContent = d.range;
+    wkContent.value = d.body;
+    weekModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => wkContent.focus(), 60);
+  }
+  function closeWeek() {
+    weekModal.hidden = true;
+    document.body.style.overflow = '';
+    if (wkLastFocused) wkLastFocused.focus();
+  }
+  document.querySelectorAll('.week-row').forEach(row => {
+    const key = row.querySelector('.wno').textContent.trim();
+    row.addEventListener('click', () => openWeek(key));
+  });
+  weekModal.querySelectorAll('[data-wclose]').forEach(b => b.addEventListener('click', closeWeek));
+  weekModal.addEventListener('mousedown', (e) => { if (e.target === weekModal) closeWeek(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !weekModal.hidden) closeWeek(); });
+  document.getElementById('week-save').addEventListener('click', () => {
+    // 原型：写回示例数据后关闭（真实项目 PATCH 到后端该周）
+    const key = wkTitle.textContent.match(/第\s*(\d+)\s*周/);
+    if (key && weekData['W' + key[1]]) weekData['W' + key[1]].body = wkContent.value;
+    closeWeek();
+  });
+  document.querySelectorAll('.icon-btn[aria-label="显示密码"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.closest('.line').querySelector('.v');
+      const masked = v.classList.toggle('masked');
+      v.textContent = masked ? '••••••••' : 'Demo@Pass123';
+      btn.setAttribute('aria-label', masked ? '显示密码' : '隐藏密码');
+    });
+  });
+  // 复制反馈
+  document.querySelectorAll('.icon-btn[aria-label^="复制"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.add('copied');
+      setTimeout(() => btn.classList.remove('copied'), 1200);
+    });
+  });
+  // 分类筛选高亮（排除管理分类按钮）
+  document.querySelectorAll('.filters .chip:not(.chip-manage)').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filters .chip:not(.chip-manage)').forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+    });
+  });
+  // 复制连接串反馈
+  document.querySelectorAll('.copy-conn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.add('copied');
+      setTimeout(() => btn.classList.remove('copied'), 1200);
+    });
+  });
+  // 侧栏项目切换（原型示意）
+  document.querySelectorAll('.proj-item').forEach(item => {
+    item.addEventListener('click', () => showProject(item));
+  });
+
+  // ---- 项目弹窗：打开 / 关闭 / 新建 vs 编辑 ----
+  const modal = document.getElementById('proj-modal');
+  const form  = document.getElementById('proj-form');
+  const titleEl = document.getElementById('modal-title');
+  const subEl   = modal.querySelector('.modal-sub');
+  let lastFocused = null;
+
+  function openModal(mode) {
+    lastFocused = document.activeElement;
+    if (mode === 'create') {
+      titleEl.textContent = '新建项目';
+      subEl.textContent = '填写项目的基本信息，创建后可继续添加资源。';
+      form.reset();
+      form.name.value = '';
+      form.desc.value = '';
+    } else {
+      titleEl.textContent = '编辑项目';
+      subEl.textContent = '修改项目信息，保存后立即生效。';
+      // 编辑时预填当前项目（原型用当前详情页数据）
+      form.name.value = '运营平台';
+      form.desc.value = '内部运营管理平台。集中记录各环境地址、需求文档、原型与部署凭证。';
+    }
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => form.name.focus(), 60);
+  }
+  function closeModal() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    if (lastFocused) lastFocused.focus();
+  }
+
+  // 触发器
+  document.querySelector('.btn-new').addEventListener('click', () => openModal('create'));
+  const editBtn = [...document.querySelectorAll('.topbar .chip')].find(b => b.textContent.includes('编辑项目'));
+  if (editBtn) editBtn.addEventListener('click', () => openModal('edit'));
+
+  // 关闭：X、取消、点遮罩、Esc
+  modal.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal));
+  modal.addEventListener('mousedown', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+
+  // 提交（原型：校验必填后关闭）
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nameField = form.name;
+    if (!nameField.value.trim()) {
+      nameField.focus();
+      nameField.style.borderColor = 'var(--danger)';
+      return;
+    }
+    closeModal();
+  });
+
+  // ---- 通用弹窗开关工厂 ----
+  function bindModal(modalEl, closeAttr) {
+    let saved = null;
+    const open = () => { saved = document.activeElement; modalEl.hidden = false; document.body.style.overflow = 'hidden'; };
+    const close = () => { modalEl.hidden = true; document.body.style.overflow = ''; if (saved) saved.focus(); };
+    modalEl.querySelectorAll('[' + closeAttr + ']').forEach(b => b.addEventListener('click', close));
+    modalEl.addEventListener('mousedown', (e) => { if (e.target === modalEl) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modalEl.hidden) close(); });
+    return { open, close };
+  }
+
+  // ---- 分类管理弹窗 ----
+  const catModal = bindModal(document.getElementById('cat-modal'), 'data-catclose');
+  document.getElementById('open-cat-manage').addEventListener('click', catModal.open);
+  const catList = document.getElementById('cat-list');
+  const newCatInput = document.getElementById('new-cat-name');
+  function addCategory() {
+    const name = newCatInput.value.trim();
+    if (!name) { newCatInput.focus(); return; }
+    const row = document.createElement('div');
+    row.className = 'cat-row';
+    row.innerHTML = '<svg class="grip" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg>'
+      + '<span class="cdot" style="background:var(--c-other)"></span>'
+      + '<span class="cname">' + name.replace(/</g,'&lt;') + '</span>'
+      + '<span class="ccount">0 项</span>'
+      + '<button class="cdel" aria-label="删除分类"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+    row.querySelector('.cdel').addEventListener('click', () => row.remove());
+    catList.appendChild(row);
+    newCatInput.value = '';
+    newCatInput.focus();
+  }
+  document.getElementById('add-cat-btn').addEventListener('click', addCategory);
+  newCatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } });
+  // 已可删除的分类（0 项）绑定删除
+  catList.querySelectorAll('.cdel:not([disabled])').forEach(b => b.addEventListener('click', (e) => e.target.closest('.cat-row').remove()));
+
+  // ---- 添加/编辑资源弹窗 ----
+  const resModalEl = document.getElementById('res-modal');
+  const resModal = bindModal(resModalEl, 'data-resclose');
+  const resForm = document.getElementById('res-form');
+  const resTitle = document.getElementById('res-modal-title');
+  const resSub = document.getElementById('res-modal-sub');
+  function openResource(category) {
+    resTitle.textContent = '添加资源';
+    resSub.textContent = '记录一条资源地址，可附带备注和账号密码。';
+    resForm.reset();
+    if (category) resForm.category.value = category;
+    resModal.open();
+    setTimeout(() => resForm.title.focus(), 60);
+  }
+  // 每个分类的「添加」按钮 + 空态触发
+  document.querySelectorAll('.cat-head .add').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.closest('.cat').querySelector('.cat-head h3').textContent.trim();
+      openResource(cat);
+    });
+  });
+  // 密码显隐
+  const rPass = document.getElementById('r-pass');
+  const rPassToggle = document.getElementById('r-pass-toggle');
+  rPassToggle.addEventListener('click', () => {
+    const show = rPass.type === 'password';
+    rPass.type = show ? 'text' : 'password';
+    rPassToggle.setAttribute('aria-label', show ? '隐藏密码' : '显示密码');
+  });
+  // 提交
+  resForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const t = resForm.title;
+    if (!t.value.trim()) { t.focus(); t.style.borderColor = 'var(--danger)'; return; }
+    resModal.close();
+  });
+</script>
+</body>
+</html>

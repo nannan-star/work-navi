@@ -1,0 +1,112 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import type { Project } from "./types";
+import { projectColorCss } from "@/lib/colors";
+import { LogoIcon, SearchIcon, CheckCircleIcon, PlusIcon } from "./icons";
+
+export default function Sidebar({
+  projects,
+  view,
+  activeProjectId,
+  currentWeekLabel,
+  query,
+  onQueryChange,
+  onShowTasks,
+  onSelectProject,
+  onNewProject,
+}: {
+  projects: Project[];
+  view: "project" | "tasks";
+  activeProjectId: string | null;
+  currentWeekLabel: string;
+  query: string;
+  onQueryChange: (q: string) => void;
+  onShowTasks: () => void;
+  onSelectProject: (id: string) => void;
+  onNewProject: () => void;
+}) {
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // 快捷键 "/" 聚焦搜索框
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA");
+      if (e.key === "/" && !typing) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  const q = query.trim().toLowerCase();
+  const filtered = q ? projects.filter((p) => p.name.toLowerCase().includes(q)) : projects;
+
+  return (
+    <aside className="sidebar" aria-label="项目导航">
+      <div className="brand">
+        <div className="logo" aria-hidden="true">
+          <LogoIcon size={19} />
+        </div>
+        <div>
+          <h1>work-navi</h1>
+          <div className="sub">项目资源导航台</div>
+        </div>
+      </div>
+
+      <div className="side-search">
+        <div className="box">
+          <SearchIcon size={15} />
+          <input
+            ref={searchRef}
+            type="text"
+            placeholder="搜索项目 / 资源…"
+            aria-label="搜索项目或资源"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+          />
+          <kbd>/</kbd>
+        </div>
+      </div>
+
+      <nav className="side-nav" aria-label="主导航">
+        <button className={`nav-item${view === "tasks" ? " active" : ""}`} onClick={onShowTasks}>
+          <CheckCircleIcon size={17} />
+          <span className="name">任务周记</span>
+          <span className="wk-badge">{currentWeekLabel}</span>
+        </button>
+      </nav>
+
+      <div className="side-label">
+        <span>我的项目</span>
+        <span className="count">{filtered.length}</span>
+      </div>
+
+      <ul className="proj-list">
+        {filtered.map((p) => (
+          <li key={p.id}>
+            <button
+              className={`proj-item${view === "project" && activeProjectId === p.id ? " active" : ""}`}
+              onClick={() => onSelectProject(p.id)}
+            >
+              <span className="dot" style={{ background: projectColorCss(p.color) }} />
+              <span className="name">{p.name}</span>
+              <span className="n">{p.resources?.length ?? 0}</span>
+            </button>
+          </li>
+        ))}
+        {filtered.length === 0 && <li className="no-projects">没有匹配的项目</li>}
+      </ul>
+
+      <div className="side-foot">
+        <button className="btn-new" onClick={onNewProject}>
+          <PlusIcon size={16} />
+          新建项目
+        </button>
+      </div>
+    </aside>
+  );
+}
