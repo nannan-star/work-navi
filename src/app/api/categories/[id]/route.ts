@@ -3,11 +3,21 @@ import { prisma } from "@/lib/db";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// PATCH /api/categories/[id] —— 重命名 / 改色
+// PATCH /api/categories/[id] —— 重命名 / 改色(同名检查按项目范围)
 export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
   const name = String(body.name ?? "").trim();
+
+  const existing = await prisma.category.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "分类不存在" }, { status: 404 });
+
+  if (name) {
+    const dup = await prisma.category.findFirst({
+      where: { projectId: existing.projectId, name, NOT: { id } },
+    });
+    if (dup) return NextResponse.json({ error: "该项目下已存在同名分类" }, { status: 409 });
+  }
 
   const data: Record<string, unknown> = {};
   if (name) data.name = name;

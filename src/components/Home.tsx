@@ -64,6 +64,11 @@ export default function Home({ initialData }: { initialData: InitialData }) {
 
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? projects[0] ?? null;
 
+  const activeProjectCategories = useMemo(
+    () => categories.filter((c) => c.projectId === activeProjectId),
+    [categories, activeProjectId]
+  );
+
   const categoryCounts = useMemo(() => {
     const m = new Map<string, number>();
     for (const p of projects) {
@@ -219,9 +224,10 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   }
 
   // ---- 分类 ----
-  async function addCategory(name: string) {
+  async function addCategory(name: string, color: string) {
+    if (!activeProjectId) return;
     try {
-      const c = await api<Category>("/api/categories", { method: "POST", body: JSON.stringify({ name }) });
+      const c = await api<Category>("/api/categories", { method: "POST", body: JSON.stringify({ projectId: activeProjectId, name, color }) });
       setCategories((prev) => [...prev, c]);
       notify("分类已添加");
     } catch (e) {
@@ -235,6 +241,19 @@ export default function Home({ initialData }: { initialData: InitialData }) {
       setCategories((prev) => prev.filter((c) => c.id !== id));
       notify("分类已删除");
     } catch (e) {
+      notify((e as Error).message, true);
+    }
+  }
+
+  async function reorderCategories(ids: string[]) {
+    const prev = categories;
+    const byId = new Map(categories.map((c) => [c.id, c]));
+    const next = ids.map((id) => byId.get(id)).filter((c): c is Category => !!c);
+    setCategories(next);
+    try {
+      await api("/api/categories", { method: "PUT", body: JSON.stringify({ ids }) });
+    } catch (e) {
+      setCategories(prev);
       notify((e as Error).message, true);
     }
   }
@@ -268,7 +287,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
             activeProject ? (
               <ProjectView
                 project={activeProject}
-                categories={categories}
+                categories={activeProjectCategories}
                 currentWeek={currentWeek}
                 content={currentContent}
                 saveState={saveState}
@@ -317,7 +336,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
 
         {resourceModal && (
           <ResourceForm
-            categories={categories}
+            categories={activeProjectCategories}
             defaultCategoryId={resourceModal.categoryId}
             initial={resourceModal.resource ?? null}
             onClose={() => setResourceModal(null)}
@@ -327,13 +346,14 @@ export default function Home({ initialData }: { initialData: InitialData }) {
 
         {categoryOpen && (
           <CategoryManager
-            categories={categories.map((c) => ({
+            categories={activeProjectCategories.map((c) => ({
               ...c,
               _count: { resources: categoryCounts.get(c.id) ?? 0 },
             }))}
             onClose={() => setCategoryOpen(false)}
             onAdd={addCategory}
             onDelete={deleteCategory}
+            onReorder={reorderCategories}
           />
         )}
 

@@ -19,15 +19,15 @@ export function projectColorCss(key: string): string {
   return PROJECT_COLORS.find((c) => c.key === key)?.css ?? "var(--primary)";
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  req: "var(--c-req)",
-  env: "var(--c-env)",
-  task: "var(--c-task)",
-  proto: "var(--c-proto)",
-  git: "var(--c-git)",
-  other: "var(--c-other)",
-};
+export const CATEGORY_COLORS: ColorOption[] = [
+  { key: "req", label: "紫色", css: "var(--c-req)" },
+  { key: "env", label: "青色", css: "var(--c-env)" },
+  { key: "task", label: "橙黄", css: "var(--c-task)" },
+  { key: "proto", label: "粉色", css: "var(--c-proto)" },
+  { key: "git", label: "绿色", css: "var(--c-git)" },
+  { key: "other", label: "灰色", css: "var(--c-other)" },
+];
 
 export function categoryColorCss(key: string): string {
-  return CATEGORY_COLORS[key] ?? "var(--c-other)";
+  return CATEGORY_COLORS.find((c) => c.key === key)?.css ?? "var(--c-other)";
 }

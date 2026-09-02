@@ -92,7 +92,7 @@ export default function ResourceForm({
           <input
             id="r-title"
             type="text"
-            placeholder="如：生产环境 · 后台"
+            placeholder="生产环境 · 后台"
             maxLength={60}
             autoFocus
             className={err && !title.trim() ? "err" : ""}
@@ -128,39 +128,38 @@ export default function ResourceForm({
           />
         </div>
 
-        <div className="grid-2">
-          <div className="field">
-            <label htmlFor="r-user">用户名</label>
+        <div className="field">
+          <label htmlFor="r-user">用户名</label>
+          <textarea
+            id="r-user"
+            rows={2}
+            placeholder="账号（选填，多个可每行一个）"
+            autoComplete="off"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <p className="hint">多个账号可每行填一个，卡片上会换行显示。</p>
+        </div>
+
+        <div className="field">
+          <label htmlFor="r-pass">密码</label>
+          <div className="pass-wrap">
             <input
-              id="r-user"
-              type="text"
-              placeholder="账号（选填）"
+              id="r-pass"
+              type={show ? "text" : "password"}
+              placeholder="密码（选填）"
               autoComplete="off"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
-          </div>
-          <div className="field">
-            <label htmlFor="r-pass">密码</label>
-            <div className="pass-wrap">
-              <input
-                id="r-pass"
-                type={show ? "text" : "password"}
-                placeholder="密码（选填）"
-                autoComplete="off"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                className="pass-toggle"
-                aria-label={show ? "隐藏密码" : "显示密码"}
-                onClick={() => setShow((v) => !v)}
-              >
-                {show ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
-              </button>
-            </div>
-            <p className="hint">明文保存 · 仅本机使用</p>
+            <button
+              type="button"
+              className="pass-toggle"
+              aria-label={show ? "隐藏密码" : "显示密码"}
+              onClick={() => setShow((v) => !v)}
+            >
+              {show ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+            </button>
           </div>
         </div>
       </form>

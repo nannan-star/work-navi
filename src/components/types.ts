@@ -2,6 +2,7 @@
 
 export interface Category {
   id: string;
+  projectId: string;
   name: string;
   color: string;
   order: number;

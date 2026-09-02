@@ -12,6 +12,9 @@ export async function POST(req: Request) {
   if (!projectId) return NextResponse.json({ error: "缺少项目" }, { status: 400 });
   if (!categoryId) return NextResponse.json({ error: "缺少分类" }, { status: 400 });
 
+  const category = await prisma.category.findFirst({ where: { id: categoryId, projectId } });
+  if (!category) return NextResponse.json({ error: "分类不属于该项目" }, { status: 400 });
+
   const max = await prisma.resource.aggregate({
     where: { projectId },
     _max: { order: true },

@@ -1,6 +1,5 @@
 // work-navi · Prisma schema (SQLite)
 // 个人项目资源导航台 —— 数据模型
-// 说明:密码明文存储,服务默认仅监听 localhost,仅供本机使用。
 
 generator client {
   provider = "prisma-client-js"
@@ -12,22 +11,28 @@ datasource db {
 }
 
 model Project {
-  id        String     @id @default(cuid())
-  name      String
-  desc      String?
-  color     String     @default("indigo")
-  order     Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  resources Resource[]
+  id         String     @id @default(cuid())
+  name       String
+  desc       String?
+  color      String     @default("indigo")
+  order      Int        @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  resources  Resource[]
+  categories Category[]
 }
 
 model Category {
   id        String     @id @default(cuid())
-  name      String     @unique
+  projectId String
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
   color     String     @default("other")
   order     Int        @default(0)
   resources Resource[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
 }
 
 model Resource {
@@ -35,12 +40,12 @@ model Resource {
   projectId  String
   project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   categoryId String
-  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   title      String
   url        String?
   note       String?
   username   String?
-  password   String? // 明文
+  password   String?
   order      Int       @default(0)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt

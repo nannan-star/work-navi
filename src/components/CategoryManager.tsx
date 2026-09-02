@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import type { Category } from "./types";
-import { categoryColorCss } from "@/lib/colors";
+import { categoryColorCss, CATEGORY_COLORS } from "@/lib/colors";
 import { GripIcon, TrashIcon, PlusIcon, CheckIcon } from "./icons";
 
 export default function CategoryManager({
@@ -11,25 +11,60 @@ export default function CategoryManager({
   onClose,
   onAdd,
   onDelete,
+  onReorder,
 }: {
   categories: Category[];
   onClose: () => void;
-  onAdd: (name: string) => void;
+  onAdd: (name: string, color: string) => void;
   onDelete: (id: string) => void;
+  onReorder: (ids: string[]) => void;
 }) {
   const [name, setName] = useState("");
+  const [color, setColor] = useState("other");
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   function add() {
     if (name.trim()) {
-      onAdd(name.trim());
+      onAdd(name.trim(), color);
       setName("");
     }
+  }
+
+  function handleDragStart(e: React.DragEvent, id: string) {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  }
+
+  function handleDragOver(e: React.DragEvent, id: string) {
+    e.preventDefault();
+    if (dragId && dragId !== id) setOverId(id);
+  }
+
+  function handleDrop(e: React.DragEvent, id: string) {
+    e.preventDefault();
+    if (!dragId || dragId === id) return;
+    const ids = categories.map((c) => c.id);
+    const from = ids.indexOf(dragId);
+    const to = ids.indexOf(id);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, dragId);
+    onReorder(ids);
+    setDragId(null);
+    setOverId(null);
+  }
+
+  function handleDragEnd() {
+    setDragId(null);
+    setOverId(null);
   }
 
   return (
     <Modal
       title="管理分类"
-      sub="增删资源分类。已有资源的分类不能直接删除。"
+      sub="增删资源分类。分类下还有资源时，请先删除或移走这些资源。拖拽可调整分类顺序。"
       onClose={onClose}
       maxWidth={460}
       footer={
@@ -42,7 +77,18 @@ export default function CategoryManager({
         {categories.map((c) => {
           const count = c._count?.resources ?? 0;
           return (
-            <div className="cat-row" key={c.id}>
+            <div
+              className={`cat-row${dragId === c.id ? " dragging" : ""}${
+                overId === c.id ? " drag-over" : ""
+              }`}
+              key={c.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, c.id)}
+              onDragOver={(e) => handleDragOver(e, c.id)}
+              onDragLeave={() => setOverId((v) => (v === c.id ? null : v))}
+              onDrop={(e) => handleDrop(e, c.id)}
+              onDragEnd={handleDragEnd}
+            >
               <span className="grip">
                 <GripIcon size={15} />
               </span>
@@ -52,8 +98,7 @@ export default function CategoryManager({
               <button
                 className="cdel"
                 aria-label="删除分类"
-                disabled={count > 0}
-                title={count > 0 ? "有资源，不能删除" : "删除分类"}
+                title={count > 0 ? `分类下还有 ${count} 项资源，请先删除或移走` : "删除分类"}
                 onClick={() => onDelete(c.id)}
               >
                 <TrashIcon size={15} />
@@ -61,6 +106,27 @@ export default function CategoryManager({
             </div>
           );
         })}
+      </div>
+
+      <div
+        className="swatches"
+        role="radiogroup"
+        aria-label="选择分类颜色"
+        style={{ marginBottom: 10 }}
+      >
+        {CATEGORY_COLORS.map((c) => (
+          <label className="swatch" key={c.key} style={{ "--sw": c.css } as React.CSSProperties}>
+            <input
+              type="radio"
+              name="cat-color"
+              value={c.key}
+              checked={color === c.key}
+              onChange={() => setColor(c.key)}
+            />
+            <span aria-hidden="true" />
+            <span className="sr-only">{c.label}</span>
+          </label>
+        ))}
       </div>
 
       <div className="cat-add-row">
