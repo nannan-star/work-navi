@@ -28,6 +28,10 @@ next-env.d.ts
 # sqlite (personal local data)
 /prisma/dev.db
 /prisma/dev.db-journal
+/prisma/dev.db.bak
+
+# 一次性脚本,含真实凭证,仅本机保留
+/prisma/restore.ts
 
 # claude code local settings
 /.claude/
