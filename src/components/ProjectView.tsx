@@ -40,6 +40,7 @@ export default function ProjectView({
   onOpenCategoryManager,
   onEditResource,
   onDeleteResource,
+  onMoveResource,
   onNotify,
   onContentChange,
   onBlurSave,
@@ -56,6 +57,7 @@ export default function ProjectView({
   onOpenCategoryManager: () => void;
   onEditResource: (r: Resource) => void;
   onDeleteResource: (r: Resource) => void;
+  onMoveResource: (r: Resource, categoryId: string) => void;
   onNotify: (msg: string) => void;
   onContentChange: (v: string) => void;
   onBlurSave: () => void;
@@ -80,7 +82,10 @@ export default function ProjectView({
     return map;
   }, [resources, q, filter]);
 
-  const visibleCategories = categories.filter((c) => (grouped.get(c.id)?.length ?? 0) > 0);
+  const visibleCategories = categories.filter((c) => {
+    if (q) return (grouped.get(c.id)?.length ?? 0) > 0;
+    return !filter || filter === c.id;
+  });
   const total = resources.length;
 
   return (
@@ -143,7 +148,11 @@ export default function ProjectView({
 
           {visibleCategories.length === 0 && (
             <div className="empty">
-              {q ? "没有匹配的资源。" : "还没有资源，点击分类区的「添加」按钮开始记录。"}
+              {q
+                ? "没有匹配的资源。"
+                : categories.length === 0
+                ? "还没有分类，点击上方「管理分类」先创建分类，再添加资源。"
+                : "还没有资源，点击分类区的「添加」按钮开始记录。"}
             </div>
           )}
 
@@ -163,8 +172,10 @@ export default function ProjectView({
                   <ResourceCard
                     key={r.id}
                     resource={r}
+                    categories={categories}
                     onEdit={onEditResource}
                     onDelete={onDeleteResource}
+                    onMove={onMoveResource}
                     onNotify={onNotify}
                   />
                 ))}

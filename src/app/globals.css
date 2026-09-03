@@ -247,6 +247,20 @@ button { font-family: inherit; cursor: pointer; }
 .menu-item:hover { background: var(--muted); color: var(--fg); }
 .menu-item.danger { color: var(--danger); }
 .menu-item.danger:hover { background: rgba(239,68,68,.12); color: var(--danger); }
+.menu-item.move-item { justify-content: space-between; }
+.menu-item.move-item:disabled { opacity: .45; cursor: default; }
+.menu-item.move-item:disabled:hover { background: transparent; color: var(--fg-2); }
+.menu-item .move-label { display: inline-flex; align-items: center; gap: 8px; }
+.menu-item .arrow { color: var(--fg-3); flex: none; }
+.move-list { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 4px; display: grid; gap: 2px; }
+.move-opt {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 10px; border-radius: 6px; border: 0; background: transparent;
+  color: var(--fg-2); font-size: 13px; text-align: left; min-height: 32px;
+  transition: background .12s, color .12s;
+}
+.move-opt:hover { background: var(--muted); color: var(--fg); }
+.move-opt .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
 .cred { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 11px; display: grid; gap: 7px; }
 .cred .line { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; }
@@ -395,6 +409,14 @@ button { font-family: inherit; cursor: pointer; }
 .cat-row .cdel { width: 30px; height: 30px; border-radius: 7px; border: 0; background: transparent; color: var(--fg-3); display: grid; place-items: center; transition: background .15s, color .15s; flex: none; }
 .cat-row .cdel:hover:not(:disabled) { background: rgba(239,68,68,.14); color: var(--danger); }
 .cat-row .cdel:disabled { opacity: .35; cursor: not-allowed; }
+.cat-row .cedit { width: 30px; height: 30px; border-radius: 7px; border: 0; background: transparent; color: var(--fg-3); display: grid; place-items: center; transition: background .15s, color .15s; flex: none; }
+.cat-row .cedit:hover { background: var(--muted); color: var(--fg); }
+.cat-row .cedit-input { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--primary); border-radius: 6px; padding: 6px 9px; color: var(--fg); font-size: 14px; font-weight: 500; min-height: 30px; }
+.cat-row .cedit-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.22); }
+.cat-row .cedit-ok { width: 30px; height: 30px; border-radius: 7px; border: 0; background: var(--primary); color: #fff; display: grid; place-items: center; flex: none; transition: filter .15s; }
+.cat-row .cedit-ok:hover { filter: brightness(1.1); }
+.cat-row .cedit-x { width: 30px; height: 30px; border-radius: 7px; border: 0; background: transparent; color: var(--fg-3); display: grid; place-items: center; flex: none; transition: background .15s, color .15s; }
+.cat-row .cedit-x:hover { background: var(--muted); color: var(--fg); }
 .cat-row.dragging { opacity: .45; }
 .cat-row.drag-over { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(99,102,241,.22); }
 .cat-add-row { display: flex; gap: 8px; margin-top: 4px; }

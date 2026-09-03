@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Resource } from "./types";
+import type { Category, Resource } from "./types";
 import { categoryColorCss } from "@/lib/colors";
 import {
   categoryIcon,
@@ -12,6 +12,8 @@ import {
   ExternalLinkIcon,
   EditIcon,
   TrashIcon,
+  MoveIcon,
+  ChevronRightIcon,
 } from "./icons";
 
 function isHttp(url: string | null): url is string {
@@ -20,22 +22,28 @@ function isHttp(url: string | null): url is string {
 
 export default function ResourceCard({
   resource,
+  categories,
   onEdit,
   onDelete,
+  onMove,
   onNotify,
 }: {
   resource: Resource;
+  categories: Category[];
   onEdit: (r: Resource) => void;
   onDelete: (r: Resource) => void;
+  onMove: (r: Resource, categoryId: string) => void;
   onNotify: (msg: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const { title, url, note, username, password, category } = resource;
   const http = isHttp(url);
+  const otherCategories = categories.filter((c) => c.id !== resource.categoryId);
 
   // 点击菜单外部关闭
   useEffect(() => {
@@ -92,6 +100,31 @@ export default function ResourceCard({
               <button className="menu-item" onClick={() => { setMenuOpen(false); onEdit(resource); }}>
                 <EditIcon size={15} /> 编辑
               </button>
+              <button
+                className="menu-item move-item"
+                disabled={otherCategories.length === 0}
+                title={otherCategories.length === 0 ? "没有其它分类可移动" : "移动到其它分类"}
+                onClick={() => setMoveOpen((v) => !v)}
+              >
+                <span className="move-label">
+                  <MoveIcon size={15} /> 移动到
+                </span>
+                <ChevronRightIcon className="arrow" size={13} />
+              </button>
+              {moveOpen && otherCategories.length > 0 && (
+                <div className="move-list">
+                  {otherCategories.map((c) => (
+                    <button
+                      key={c.id}
+                      className="move-opt"
+                      onClick={() => { setMenuOpen(false); setMoveOpen(false); onMove(resource, c.id); }}
+                    >
+                      <span className="dot" style={{ background: categoryColorCss(c.color) }} />
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              )}
               <button className="menu-item danger" onClick={() => { setMenuOpen(false); onDelete(resource); }}>
                 <TrashIcon size={15} /> 删除
               </button>

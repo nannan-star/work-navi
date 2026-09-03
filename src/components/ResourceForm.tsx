@@ -30,7 +30,7 @@ export default function ResourceForm({
   const [categoryId, setCategoryId] = useState(
     initial?.categoryId ?? defaultCategoryId ?? categories[0]?.id ?? ""
   );
-  const [title, setTitle] = useState(initial?.title ?? "");
+  const [title, setTitle] = useState(initial?.title ?? "生产环境 · 后台");
   const [url, setUrl] = useState(initial?.url ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
   const [username, setUsername] = useState(initial?.username ?? "");

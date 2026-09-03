@@ -4,23 +4,27 @@ import { useState } from "react";
 import Modal from "./Modal";
 import type { Category } from "./types";
 import { categoryColorCss, CATEGORY_COLORS } from "@/lib/colors";
-import { GripIcon, TrashIcon, PlusIcon, CheckIcon } from "./icons";
+import { GripIcon, TrashIcon, PlusIcon, CheckIcon, EditIcon, XIcon } from "./icons";
 
 export default function CategoryManager({
   categories,
   onClose,
   onAdd,
   onDelete,
+  onRename,
   onReorder,
 }: {
   categories: Category[];
   onClose: () => void;
   onAdd: (name: string, color: string) => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, name: string) => void;
   onReorder: (ids: string[]) => void;
 }) {
   const [name, setName] = useState("");
   const [color, setColor] = useState("other");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
@@ -29,6 +33,21 @@ export default function CategoryManager({
       onAdd(name.trim(), color);
       setName("");
     }
+  }
+
+  function startEdit(c: Category) {
+    setEditingId(c.id);
+    setEditName(c.name);
+  }
+
+  function saveEdit(id: string) {
+    const n = editName.trim();
+    if (n) onRename(id, n);
+    setEditingId(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
   }
 
   function handleDragStart(e: React.DragEvent, id: string) {
@@ -76,13 +95,14 @@ export default function CategoryManager({
       <div className="cat-list">
         {categories.map((c) => {
           const count = c._count?.resources ?? 0;
+          const editing = editingId === c.id;
           return (
             <div
               className={`cat-row${dragId === c.id ? " dragging" : ""}${
                 overId === c.id ? " drag-over" : ""
               }`}
               key={c.id}
-              draggable
+              draggable={!editing}
               onDragStart={(e) => handleDragStart(e, c.id)}
               onDragOver={(e) => handleDragOver(e, c.id)}
               onDragLeave={() => setOverId((v) => (v === c.id ? null : v))}
@@ -93,16 +113,53 @@ export default function CategoryManager({
                 <GripIcon size={15} />
               </span>
               <span className="cdot" style={{ background: categoryColorCss(c.color) }} />
-              <span className="cname">{c.name}</span>
-              <span className="ccount">{count} 项</span>
-              <button
-                className="cdel"
-                aria-label="删除分类"
-                title={count > 0 ? `分类下还有 ${count} 项资源，请先删除或移走` : "删除分类"}
-                onClick={() => onDelete(c.id)}
-              >
-                <TrashIcon size={15} />
-              </button>
+              {editing ? (
+                <>
+                  <input
+                    className="cedit-input"
+                    autoFocus
+                    aria-label="分类名称"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        saveEdit(c.id);
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        cancelEdit();
+                      }
+                    }}
+                  />
+                  <button className="cedit-ok" aria-label="保存" onClick={() => saveEdit(c.id)}>
+                    <CheckIcon size={14} />
+                  </button>
+                  <button className="cedit-x" aria-label="取消" onClick={cancelEdit}>
+                    <XIcon size={14} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="cname">{c.name}</span>
+                  <span className="ccount">{count} 项</span>
+                  <button
+                    className="cedit"
+                    aria-label="重命名分类"
+                    title="重命名"
+                    onClick={() => startEdit(c)}
+                  >
+                    <EditIcon size={15} />
+                  </button>
+                  <button
+                    className="cdel"
+                    aria-label="删除分类"
+                    title={count > 0 ? `分类下还有 ${count} 项资源，请先删除或移走` : "删除分类"}
+                    onClick={() => onDelete(c.id)}
+                  >
+                    <TrashIcon size={15} />
+                  </button>
+                </>
+              )}
             </div>
           );
         })}

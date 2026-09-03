@@ -223,6 +223,26 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     }
   }
 
+  async function moveResource(resource: Resource, categoryId: string) {
+    if (categoryId === resource.categoryId) return;
+    try {
+      const r = await api<Resource>(`/api/resources/${resource.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ categoryId }),
+      });
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === r.projectId
+            ? { ...p, resources: (p.resources ?? []).map((x) => (x.id === r.id ? { ...x, ...r } : x)) }
+            : p
+        )
+      );
+      notify(`已移动到「${r.category?.name ?? ""}」`);
+    } catch (e) {
+      notify((e as Error).message, true);
+    }
+  }
+
   // ---- 分类 ----
   async function addCategory(name: string, color: string) {
     if (!activeProjectId) return;
@@ -240,6 +260,19 @@ export default function Home({ initialData }: { initialData: InitialData }) {
       await api(`/api/categories/${id}`, { method: "DELETE" });
       setCategories((prev) => prev.filter((c) => c.id !== id));
       notify("分类已删除");
+    } catch (e) {
+      notify((e as Error).message, true);
+    }
+  }
+
+  async function renameCategory(id: string, name: string) {
+    try {
+      const c = await api<Category>(`/api/categories/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name }),
+      });
+      setCategories((prev) => prev.map((x) => (x.id === id ? { ...x, ...c } : x)));
+      notify("分类已重命名");
     } catch (e) {
       notify((e as Error).message, true);
     }
@@ -297,6 +330,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                 onOpenCategoryManager={() => setCategoryOpen(true)}
                 onEditResource={(r) => setResourceModal({ projectId: r.projectId, resource: r })}
                 onDeleteResource={deleteResource}
+                onMoveResource={moveResource}
                 onNotify={notify}
                 onContentChange={handleContentChange}
                 onBlurSave={saveCurrentWeek}
@@ -353,6 +387,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
             onClose={() => setCategoryOpen(false)}
             onAdd={addCategory}
             onDelete={deleteCategory}
+            onRename={renameCategory}
             onReorder={reorderCategories}
           />
         )}

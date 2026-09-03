@@ -130,6 +130,15 @@ export const TrashIcon = (p: IconProps) => (
   </svg>
 );
 
+export const MoveIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <polyline points="5 9 2 12 5 15" />
+    <polyline points="9 5 12 2 15 5" />
+    <line x1="2" y1="12" x2="22" y2="12" />
+    <line x1="12" y1="2" x2="12" y2="22" />
+  </svg>
+);
+
 export const GripIcon = (p: IconProps) => (
   <svg {...base({ ...p, size: p.size ?? 15 })} fill="currentColor" stroke="none">
     <circle cx="9" cy="6" r="1.4" />

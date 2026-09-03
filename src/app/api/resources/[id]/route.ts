@@ -7,13 +7,14 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
-  const title = String(body.title ?? "").trim();
-  if (!title) return NextResponse.json({ error: "标题不能为空" }, { status: 400 });
+  const hasTitle = typeof body.title === "string";
+  const title = hasTitle ? body.title.trim() : "";
+  if (hasTitle && !title) return NextResponse.json({ error: "标题不能为空" }, { status: 400 });
 
   const resource = await prisma.resource.update({
     where: { id },
     data: {
-      title: title.slice(0, 60),
+      title: hasTitle ? title.slice(0, 60) : undefined,
       categoryId: body.categoryId || undefined,
       url: body.url !== undefined ? (body.url ? String(body.url).trim() : null) : undefined,
       note: body.note !== undefined ? (body.note ? String(body.note).slice(0, 200) : null) : undefined,
