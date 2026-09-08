@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Project } from "./types";
 import { projectColorCss } from "@/lib/colors";
-import { LogoIcon, SearchIcon, CheckCircleIcon, NoteIcon, PlusIcon } from "./icons";
+import { LogoIcon, SearchIcon, CheckCircleIcon, NoteIcon, PlusIcon, SunIcon, MoonIcon } from "./icons";
 
 export default function Sidebar({
   projects,
@@ -29,6 +29,20 @@ export default function Sidebar({
   onNewProject: () => void;
 }) {
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // 主题切换: 内联脚本可能在 hydration 前已设置 data-theme,这里同步一次。
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  useEffect(() => {
+    const t = document.documentElement.getAttribute("data-theme");
+    if (t === "light" || t === "dark") setTheme(t);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch {}
+    setTheme(next);
+  };
 
   // 快捷键 "/" 聚焦搜索框
   useEffect(() => {
@@ -57,6 +71,14 @@ export default function Sidebar({
           <h1>work-navi</h1>
           <div className="sub">项目资源导航台</div>
         </div>
+        <button
+          className="theme-toggle"
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "切换到明亮模式" : "切换到暗黑模式"}
+          title={theme === "dark" ? "切换到明亮模式" : "切换到暗黑模式"}
+        >
+          {theme === "dark" ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+        </button>
       </div>
 
       <div className="side-search">
