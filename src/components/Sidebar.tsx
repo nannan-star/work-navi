@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { Project } from "./types";
 import { projectColorCss } from "@/lib/colors";
-import { LogoIcon, SearchIcon, CheckCircleIcon, PlusIcon } from "./icons";
+import { LogoIcon, SearchIcon, CheckCircleIcon, NoteIcon, PlusIcon } from "./icons";
 
 export default function Sidebar({
   projects,
@@ -12,16 +12,18 @@ export default function Sidebar({
   currentWeekLabel,
   query,
   onQueryChange,
+  onShowNotes,
   onShowTasks,
   onSelectProject,
   onNewProject,
 }: {
   projects: Project[];
-  view: "project" | "tasks";
+  view: "project" | "tasks" | "notes";
   activeProjectId: string | null;
   currentWeekLabel: string;
   query: string;
   onQueryChange: (q: string) => void;
+  onShowNotes: () => void;
   onShowTasks: () => void;
   onSelectProject: (id: string) => void;
   onNewProject: () => void;
@@ -73,6 +75,10 @@ export default function Sidebar({
       </div>
 
       <nav className="side-nav" aria-label="主导航">
+        <button className={`nav-item${view === "notes" ? " active" : ""}`} onClick={onShowNotes}>
+          <NoteIcon size={17} />
+          <span className="name">开发笔记</span>
+        </button>
         <button className={`nav-item${view === "tasks" ? " active" : ""}`} onClick={onShowTasks}>
           <CheckCircleIcon size={17} />
           <span className="name">任务周记</span>

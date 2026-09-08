@@ -28,6 +28,7 @@ export interface Project {
   desc: string | null;
   color: string;
   order: number;
+  memo: string;
   createdAt: string;
   updatedAt: string;
   _count?: { resources: number };

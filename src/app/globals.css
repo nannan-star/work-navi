@@ -476,6 +476,45 @@ svg { display: block; }
 .week-row .chev { color: var(--fg-3); flex: none; }
 .week-row:hover .chev { color: var(--fg); }
 
+/* ---- Notes view (开发笔记) ---- */
+.notes-layout {
+  padding: 18px 28px 60px;
+  display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; align-items: start;
+}
+@media (max-width: 1180px) { .notes-layout { grid-template-columns: 1fr; } }
+
+.notes-list { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.notes-item {
+  display: flex; align-items: flex-start; gap: 11px; width: 100%; min-width: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 13px 14px; text-align: left; color: var(--fg-2);
+  transition: border-color .15s var(--ease), background .15s;
+}
+.notes-item:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.notes-item.active { border-color: var(--primary); background: var(--surface-2); }
+.notes-item .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; margin-top: 5px; }
+.notes-item .nm { flex: 1; min-width: 0; }
+.notes-item .name { display: block; font-size: 14px; font-weight: 600; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notes-item .ex { display: block; font-size: 12px; color: var(--fg-3); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.notes-editor {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; display: flex; flex-direction: column; min-width: 0;
+}
+.ne-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.ne-head .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.ne-head h2 { font-size: 16px; margin: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ne-head .spacer { flex: 1; }
+.ne-head .saved { font-size: 12px; color: var(--fg-3); display: flex; align-items: center; gap: 6px; flex: none; }
+.ne-head .saved .d { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.notes-editor textarea {
+  width: 100%; max-width: 100%; border: 0; background: transparent; color: var(--fg); resize: vertical;
+  padding: 18px; font-size: 14px; line-height: 1.8; min-height: 420px;
+  font-family: var(--font-mono), ui-monospace, Menlo, monospace; outline: none; box-sizing: border-box;
+}
+.notes-editor textarea::placeholder { color: var(--fg-3); }
+.ne-foot { padding: 10px 18px; border-top: 1px solid var(--border); font-size: 12px; color: var(--fg-3); display: flex; gap: 16px; background: var(--bg); }
+
 /* ---- empty states ---- */
 .empty { border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 30px 16px; text-align: center; color: var(--fg-3); font-size: 13px; }
 .empty button.add-link { color: var(--accent); background: transparent; border: 0; font: inherit; cursor: pointer; text-decoration: underline; padding: 0; }

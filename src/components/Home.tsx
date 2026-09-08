@@ -5,6 +5,7 @@ import type { Category, Project, Resource, WeekInfo, WeekNote } from "./types";
 import Sidebar from "./Sidebar";
 import ProjectView from "./ProjectView";
 import TasksView from "./TasksView";
+import NotesView from "./NotesView";
 import ProjectForm, { type ProjectFormData } from "./ProjectForm";
 import ResourceForm, { type ResourceFormData } from "./ResourceForm";
 import CategoryManager from "./CategoryManager";
@@ -33,7 +34,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const [weekNotes, setWeekNotes] = useState<WeekNote[]>(initialData.weekNotes);
   const currentWeek = initialData.currentWeek;
 
-  const [view, setView] = useState<"project" | "tasks">("project");
+  const [view, setView] = useState<"project" | "tasks" | "notes">("project");
   const [activeProjectId, setActiveProjectId] = useState<string | null>(
     initialData.projects[0]?.id ?? null
   );
@@ -119,6 +120,20 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   function handleContentChange(v: string) {
     setCurrentContent(v);
     setSaveState("idle");
+  }
+
+  // ---- 开发笔记 ----
+  async function saveMemo(projectId: string, memo: string) {
+    try {
+      const updated = await api<Project>(`/api/projects/${projectId}/memo`, {
+        method: "PATCH",
+        body: JSON.stringify({ memo }),
+      });
+      setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, memo: updated.memo } : p)));
+    } catch (e) {
+      notify((e as Error).message, true);
+      throw e;
+    }
   }
 
   // ---- 项目 ----
@@ -310,6 +325,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           currentWeekLabel={currentWeek.label}
           query={query}
           onQueryChange={setQuery}
+          onShowNotes={() => setView("notes")}
           onShowTasks={() => setView("tasks")}
           onSelectProject={selectProject}
           onNewProject={() => setProjectModal({ mode: "create" })}
@@ -341,7 +357,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                 <p>还没有项目。点击左侧「新建项目」开始记录资源与环境。</p>
               </div>
             )
-          ) : (
+          ) : view === "tasks" ? (
             <TasksView
               weekNotes={weekNotes}
               currentWeek={currentWeek}
@@ -351,6 +367,8 @@ export default function Home({ initialData }: { initialData: InitialData }) {
               onBlurSave={saveCurrentWeek}
               onOpenWeek={(n) => setWeekModal(n)}
             />
+          ) : (
+            <NotesView projects={projects} onSaveMemo={saveMemo} />
           )}
         </div>
 

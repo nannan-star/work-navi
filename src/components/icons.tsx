@@ -47,6 +47,15 @@ export const EditIcon = (p: IconProps) => (
   </svg>
 );
 
+export const NoteIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M5 3h9a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+    <path d="M8 3v4h8V3" />
+    <line x1="7" y1="13" x2="17" y2="13" />
+    <line x1="7" y1="17" x2="14" y2="17" />
+  </svg>
+);
+
 export const CalendarIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <rect x="3" y="3" width="18" height="18" rx="2" />

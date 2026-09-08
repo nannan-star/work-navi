@@ -16,6 +16,7 @@ model Project {
   desc       String?
   color      String     @default("indigo")
   order      Int        @default(0)
+  memo       String     @default("")
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   resources  Resource[]
