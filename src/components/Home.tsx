@@ -238,6 +238,34 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     }
   }
 
+  async function reorderResources(categoryId: string, ids: string[]) {
+    if (!activeProjectId) return;
+    const prevProjects = projects;
+    const byId = new Map(
+      projects.flatMap((p) => (p.resources ?? []).map((r) => [r.id, r] as const))
+    );
+    const reordered = ids.map((id) => byId.get(id)).filter((r): r is Resource => !!r);
+    if (reordered.length !== ids.length) return; // 数据不一致,放弃本次排序
+
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== activeProjectId) return p;
+        let i = 0;
+        const resources = (p.resources ?? []).map((r) =>
+          r.categoryId === categoryId ? { ...reordered[i], order: i++ } : r
+        );
+        return { ...p, resources };
+      })
+    );
+
+    try {
+      await api("/api/resources", { method: "PUT", body: JSON.stringify({ ids }) });
+    } catch (e) {
+      setProjects(prevProjects);
+      notify((e as Error).message, true);
+    }
+  }
+
   async function moveResource(resource: Resource, categoryId: string) {
     if (categoryId === resource.categoryId) return;
     try {
@@ -347,6 +375,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                 onEditResource={(r) => setResourceModal({ projectId: r.projectId, resource: r })}
                 onDeleteResource={deleteResource}
                 onMoveResource={moveResource}
+                onReorder={reorderResources}
                 onNotify={notify}
                 onContentChange={handleContentChange}
                 onBlurSave={saveCurrentWeek}

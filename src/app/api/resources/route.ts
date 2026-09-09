@@ -36,3 +36,17 @@ export async function POST(req: Request) {
   });
   return NextResponse.json(resource, { status: 201 });
 }
+
+// PUT /api/resources —— 重排资源顺序(按传入 id 的顺序写回 order)
+export async function PUT(req: Request) {
+  const body = await req.json().catch(() => ({}));
+  const ids: string[] = Array.isArray(body.ids)
+    ? body.ids.map((x: unknown) => String(x))
+    : [];
+  if (!ids.length) return NextResponse.json({ error: "缺少资源顺序" }, { status: 400 });
+
+  await prisma.$transaction(
+    ids.map((id, i) => prisma.resource.update({ where: { id }, data: { order: i } }))
+  );
+  return NextResponse.json({ ok: true });
+}

@@ -14,6 +14,7 @@ import {
   TrashIcon,
   MoveIcon,
   ChevronRightIcon,
+  GripIcon,
 } from "./icons";
 
 function isHttp(url: string): boolean {
@@ -27,6 +28,14 @@ export default function ResourceCard({
   onDelete,
   onMove,
   onNotify,
+  dragActive = true,
+  dragging = false,
+  dragOver = false,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
 }: {
   resource: Resource;
   categories: Category[];
@@ -34,6 +43,14 @@ export default function ResourceCard({
   onDelete: (r: Resource) => void;
   onMove: (r: Resource, categoryId: string) => void;
   onNotify: (msg: string) => void;
+  dragActive?: boolean;
+  dragging?: boolean;
+  dragOver?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: () => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -66,7 +83,13 @@ export default function ResourceCard({
   }
 
   return (
-    <article className="card">
+    <article
+      className={`card${dragging ? " dragging" : ""}${dragOver ? " drag-over" : ""}`}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
       <div className="row1">
         <div className="favicon" aria-hidden="true">
           {categoryIcon(category?.color ?? "other")}
@@ -184,6 +207,15 @@ export default function ResourceCard({
       )}
 
       <div className="foot">
+        <span
+          className="grip"
+          draggable={dragActive}
+          aria-label="拖拽排序"
+          title="拖拽排序"
+          onDragStart={onDragStart}
+        >
+          <GripIcon size={15} />
+        </span>
         <span className="tag" style={{ color: categoryColorCss(category?.color ?? "other") }}>
           {category?.name}
         </span>

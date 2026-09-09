@@ -41,6 +41,7 @@ export default function ProjectView({
   onEditResource,
   onDeleteResource,
   onMoveResource,
+  onReorder,
   onNotify,
   onContentChange,
   onBlurSave,
@@ -58,12 +59,15 @@ export default function ProjectView({
   onEditResource: (r: Resource) => void;
   onDeleteResource: (r: Resource) => void;
   onMoveResource: (r: Resource, categoryId: string) => void;
+  onReorder: (categoryId: string, ids: string[]) => void;
   onNotify: (msg: string) => void;
   onContentChange: (v: string) => void;
   onBlurSave: () => void;
   onGotoTasks: () => void;
 }) {
   const [filter, setFilter] = useState<string | null>(null); // null = 全部
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   const resources = project.resources ?? [];
   const q = query.trim().toLowerCase();
 
@@ -89,6 +93,36 @@ export default function ProjectView({
     return !filter || filter === c.id;
   });
   const total = resources.length;
+
+  function handleDragStart(e: React.DragEvent, id: string) {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  }
+
+  function handleDragOver(e: React.DragEvent, id: string) {
+    e.preventDefault();
+    if (dragId && dragId !== id) setOverId(id);
+  }
+
+  function handleDrop(e: React.DragEvent, categoryId: string, targetId: string) {
+    e.preventDefault();
+    if (!dragId || dragId === targetId) return;
+    const ids = (grouped.get(categoryId) ?? []).map((r) => r.id);
+    const from = ids.indexOf(dragId);
+    const to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, dragId);
+    onReorder(categoryId, ids);
+    setDragId(null);
+    setOverId(null);
+  }
+
+  function handleDragEnd() {
+    setDragId(null);
+    setOverId(null);
+  }
 
   return (
     <div className="view">
@@ -179,6 +213,14 @@ export default function ProjectView({
                     onDelete={onDeleteResource}
                     onMove={onMoveResource}
                     onNotify={onNotify}
+                    dragActive={!q}
+                    dragging={dragId === r.id}
+                    dragOver={overId === r.id}
+                    onDragStart={(e) => handleDragStart(e, r.id)}
+                    onDragOver={(e) => handleDragOver(e, r.id)}
+                    onDragLeave={() => setOverId((v) => (v === r.id ? null : v))}
+                    onDrop={(e) => handleDrop(e, c.id, r.id)}
+                    onDragEnd={handleDragEnd}
                   />
                 ))}
               </div>

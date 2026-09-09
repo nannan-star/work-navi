@@ -354,6 +354,15 @@ button { font-family: inherit; cursor: pointer; }
 .card .copy-conn:hover { color: var(--fg); border-color: var(--border-strong); }
 .card .copy-conn.copied { color: var(--accent); border-color: var(--accent); }
 .card .tag { margin-left: auto; font-size: 11px; color: var(--fg-3); font-family: var(--font-mono), ui-monospace, Menlo, monospace; }
+.card .foot .grip {
+  color: var(--fg-3); display: grid; place-items: center; cursor: grab; opacity: .55;
+  transition: color .15s, opacity .15s; user-select: none;
+}
+.card .foot .grip:hover { color: var(--fg); opacity: 1; }
+.card .foot .grip:active { cursor: grabbing; }
+.card.dragging { opacity: .5; }
+.card.drag-over { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-ring); }
+
 
 /* notes panel */
 .notes {
