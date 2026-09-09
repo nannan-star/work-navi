@@ -16,8 +16,8 @@ import {
   ChevronRightIcon,
 } from "./icons";
 
-function isHttp(url: string | null): url is string {
-  return !!url && /^https?:\/\//i.test(url);
+function isHttp(url: string): boolean {
+  return /^https?:\/\//i.test(url);
 }
 
 export default function ResourceCard({
@@ -41,8 +41,7 @@ export default function ResourceCard({
   const [copied, setCopied] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const { title, url, note, username, password, category } = resource;
-  const http = isHttp(url);
+  const { title, note, username, password, category, links } = resource;
   const otherCategories = categories.filter((c) => c.id !== resource.categoryId);
 
   // 点击菜单外部关闭
@@ -73,23 +72,7 @@ export default function ResourceCard({
           {categoryIcon(category?.color ?? "other")}
         </div>
         <div className="ttl">
-          {http ? (
-            <h4>
-              <a className="h4-link" href={url} target="_blank" rel="noopener">
-                {title}
-                <ExternalLinkIcon className="ext" />
-              </a>
-            </h4>
-          ) : (
-            <h4 className="plain">{title}</h4>
-          )}
-          {url && (http ? (
-            <a className="url" href={url} target="_blank" rel="noopener">
-              {url}
-            </a>
-          ) : (
-            <span className="url no-link mono">{url}</span>
-          ))}
+          <h4 className="plain">{title}</h4>
         </div>
         <div className="kebab-wrap" ref={menuRef}>
           <button className="kebab" aria-label="更多操作" onClick={() => setMenuOpen((v) => !v)}>
@@ -132,6 +115,31 @@ export default function ResourceCard({
           )}
         </div>
       </div>
+
+      {links.length > 0 && (
+        <div className="links">
+          {links.map((link) =>
+            isHttp(link.url) ? (
+              <a key={link.id} className="link-row" href={link.url} target="_blank" rel="noopener">
+                <span className="link-label">{link.label || "地址"}</span>
+                <ExternalLinkIcon className="ext" />
+              </a>
+            ) : (
+              <div key={link.id} className="link-row">
+                <span className="link-label">{link.label || "地址"}</span>
+                <span className="link-url mono">{link.url}</span>
+                <button
+                  className={`icon-btn${copied === link.id ? " copied" : ""}`}
+                  aria-label="复制链接"
+                  onClick={() => copy(link.url, link.id)}
+                >
+                  <CopyIcon size={15} />
+                </button>
+              </div>
+            )
+          )}
+        </div>
+      )}
 
       {note && <p className="note">{note}</p>}
 
@@ -176,14 +184,6 @@ export default function ResourceCard({
       )}
 
       <div className="foot">
-        {url && !http && (
-          <button
-            className={`copy-conn${copied === "conn" ? " copied" : ""}`}
-            onClick={() => copy(url, "conn")}
-          >
-            <CopyIcon size={14} /> 复制连接串
-          </button>
-        )}
         <span className="tag" style={{ color: categoryColorCss(category?.color ?? "other") }}>
           {category?.name}
         </span>

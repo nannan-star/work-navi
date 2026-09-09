@@ -282,6 +282,19 @@ button { font-family: inherit; cursor: pointer; }
 .card .ttl a.url:hover { text-decoration: underline; }
 .card .ttl .url.no-link { color: var(--fg-3); }
 
+.card .links { margin-top: 12px; display: grid; gap: 6px; }
+.card .link-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; min-height: 26px;
+  text-decoration: none; color: var(--fg-2);
+}
+.card a.link-item:hover .link-label { color: var(--info); }
+.card .link-item .link-label { font-weight: 600; color: var(--fg); flex: none; }
+.card .link-item .link-url { flex: 1; min-width: 0; color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .link-item .ext { flex: none; color: var(--fg-3); opacity: 0; transition: opacity .15s; }
+.card:hover .link-item .ext { opacity: .7; }
+.card .link-item .icon-btn { margin-left: auto; width: 26px; height: 26px; }
+
 .card .note { font-size: 13px; color: var(--fg-2); margin: 10px 0 0; line-height: 1.55; }
 
 .kebab-wrap { position: relative; flex: none; }
@@ -415,6 +428,17 @@ button { font-family: inherit; cursor: pointer; }
 .pass-wrap input { width: 100%; padding-right: 42px; }
 .pass-toggle { position: absolute; right: 6px; width: 32px; height: 32px; border-radius: 7px; border: 0; background: transparent; color: var(--fg-3); display: grid; place-items: center; transition: color .15s, background .15s; }
 .pass-toggle:hover { color: var(--fg); background: var(--surface-2); }
+
+/* link list editor (resource form) */
+.link-rows { display: grid; gap: 8px; }
+.link-row { display: flex; gap: 8px; align-items: center; }
+.link-row .lr-label { flex: 0 0 38%; min-width: 0; }
+.link-row .lr-url { flex: 1; min-width: 0; }
+.link-del { width: 34px; height: 34px; flex: none; border-radius: 7px; border: 0; background: transparent; color: var(--fg-3); display: grid; place-items: center; transition: background .15s, color .15s; }
+.link-del:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
+.link-del:disabled { opacity: .35; cursor: not-allowed; }
+.link-add { display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--fg); border-radius: var(--radius-sm); padding: 7px 14px; font-size: 13px; font-weight: 500; min-height: 36px; transition: background .15s, border-color .15s; justify-self: start; }
+.link-add:hover { background: var(--muted); }
 
 .swatches { display: flex; gap: 12px; flex-wrap: wrap; }
 .swatch { position: relative; cursor: pointer; }

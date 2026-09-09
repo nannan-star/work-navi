@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { sanitizeLinks } from "@/lib/links";
 
 // POST /api/resources —— 新建资源
 export async function POST(req: Request) {
@@ -25,13 +26,13 @@ export async function POST(req: Request) {
       projectId,
       categoryId,
       title: title.slice(0, 60),
-      url: body.url ? String(body.url).trim() : null,
       note: body.note ? String(body.note).slice(0, 200) : null,
       username: body.username ? String(body.username) : null,
       password: body.password ? String(body.password) : null,
       order: (max._max.order ?? -1) + 1,
+      links: { create: sanitizeLinks(body.links) },
     },
-    include: { category: true },
+    include: { category: true, links: { orderBy: { order: "asc" } } },
   });
   return NextResponse.json(resource, { status: 201 });
 }

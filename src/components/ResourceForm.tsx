@@ -3,15 +3,15 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import type { Category, Resource } from "./types";
-import { CheckIcon, EyeIcon, EyeOffIcon } from "./icons";
+import { CheckIcon, EyeIcon, EyeOffIcon, PlusIcon, XIcon } from "./icons";
 
 export interface ResourceFormData {
   categoryId: string;
   title: string;
-  url: string;
   note: string;
   username: string;
   password: string;
+  links: { label: string; url: string }[];
 }
 
 export default function ResourceForm({
@@ -31,12 +31,28 @@ export default function ResourceForm({
     initial?.categoryId ?? defaultCategoryId ?? categories[0]?.id ?? ""
   );
   const [title, setTitle] = useState(initial?.title ?? "生产环境 · 后台");
-  const [url, setUrl] = useState(initial?.url ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
   const [username, setUsername] = useState(initial?.username ?? "");
   const [password, setPassword] = useState(initial?.password ?? "");
+  const [links, setLinks] = useState<{ label: string; url: string }[]>(
+    initial?.links?.length
+      ? initial.links.map((l) => ({ label: l.label, url: l.url }))
+      : [{ label: "", url: "" }]
+  );
   const [show, setShow] = useState(false);
   const [err, setErr] = useState(false);
+
+  function addLink() {
+    setLinks((prev) => [...prev, { label: "", url: "" }]);
+  }
+
+  function removeLink(i: number) {
+    setLinks((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  function updateLink(i: number, patch: Partial<{ label: string; url: string }>) {
+    setLinks((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,17 +63,17 @@ export default function ResourceForm({
     onSubmit({
       categoryId,
       title: title.trim(),
-      url: url.trim(),
       note: note.trim(),
       username: username.trim(),
       password,
+      links: links.map((l) => ({ label: l.label.trim(), url: l.url.trim() })),
     });
   }
 
   return (
     <Modal
       title={initial ? "编辑资源" : "添加资源"}
-      sub={initial ? "修改这条资源信息。" : "记录一条资源地址，可附带备注和账号密码。"}
+      sub={initial ? "修改这条资源信息。" : "记录一条资源地址，可附带多个链接、备注和账号密码。"}
       onClose={onClose}
       maxWidth={520}
       footer={
@@ -105,15 +121,43 @@ export default function ResourceForm({
         </div>
 
         <div className="field">
-          <label htmlFor="r-url">地址 URL</label>
-          <input
-            id="r-url"
-            type="text"
-            placeholder="https:// 或 IP:端口（选填）"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-          <p className="hint">填了 http(s) 地址就能点标题直接跳转。</p>
+          <label>链接</label>
+          <div className="link-rows">
+            {links.map((link, i) => (
+              <div className="link-row" key={i}>
+                <input
+                  type="text"
+                  className="lr-label"
+                  placeholder="名称，如 测试环境"
+                  maxLength={40}
+                  value={link.label}
+                  onChange={(e) => updateLink(i, { label: e.target.value })}
+                />
+                <input
+                  type="text"
+                  className="lr-url"
+                  placeholder="https:// 或 IP:端口"
+                  value={link.url}
+                  onChange={(e) => updateLink(i, { url: e.target.value })}
+                />
+                <button
+                  type="button"
+                  className="link-del"
+                  aria-label="删除链接"
+                  onClick={() => removeLink(i)}
+                  disabled={links.length === 1}
+                >
+                  <XIcon size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <button type="button" className="link-add" onClick={addLink}>
+            <PlusIcon size={15} /> 添加链接
+          </button>
+          <p className="hint">
+            每个链接可填名称 + 地址；名称留空默认显示为「地址」，填了 http(s) 即可点击跳转。
+          </p>
         </div>
 
         <div className="field">

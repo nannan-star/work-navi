@@ -71,7 +71,9 @@ export default function ProjectView({
     const map = new Map<string, Resource[]>();
     for (const r of resources) {
       if (q) {
-        const hay = `${r.title} ${r.url ?? ""} ${r.note ?? ""} ${r.username ?? ""}`.toLowerCase();
+        const hay =
+          `${r.title} ${r.note ?? ""} ${r.username ?? ""} ` +
+          `${(r.links ?? []).map((l) => `${l.label} ${l.url}`).join(" ")}`.toLowerCase();
         if (!hay.includes(q)) continue;
       }
       if (filter && r.categoryId !== filter) continue;

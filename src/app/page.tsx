@@ -12,7 +12,7 @@ export default async function Page() {
       include: {
         resources: {
           orderBy: { order: "asc" },
-          include: { category: true },
+          include: { category: true, links: { orderBy: { order: "asc" } } },
         },
       },
     }),

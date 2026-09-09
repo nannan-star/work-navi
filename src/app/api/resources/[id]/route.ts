@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { sanitizeLinks } from "@/lib/links";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -16,12 +17,15 @@ export async function PATCH(req: Request, { params }: Ctx) {
     data: {
       title: hasTitle ? title.slice(0, 60) : undefined,
       categoryId: body.categoryId || undefined,
-      url: body.url !== undefined ? (body.url ? String(body.url).trim() : null) : undefined,
       note: body.note !== undefined ? (body.note ? String(body.note).slice(0, 200) : null) : undefined,
       username: body.username !== undefined ? (body.username ? String(body.username) : null) : undefined,
       password: body.password !== undefined ? (body.password ? String(body.password) : null) : undefined,
+      links:
+        body.links !== undefined
+          ? { deleteMany: {}, create: sanitizeLinks(body.links) }
+          : undefined,
     },
-    include: { category: true },
+    include: { category: true, links: { orderBy: { order: "asc" } } },
   });
   return NextResponse.json(resource);
 }

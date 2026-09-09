@@ -9,17 +9,25 @@ export interface Category {
   _count?: { resources: number };
 }
 
+export interface ResourceLink {
+  id: string;
+  resourceId: string;
+  label: string;
+  url: string;
+  order: number;
+}
+
 export interface Resource {
   id: string;
   projectId: string;
   categoryId: string;
   title: string;
-  url: string | null;
   note: string | null;
   username: string | null;
   password: string | null;
   order: number;
   category?: Category;
+  links: ResourceLink[];
 }
 
 export interface Project {
