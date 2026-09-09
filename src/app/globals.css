@@ -264,7 +264,7 @@ button { font-family: inherit; cursor: pointer; }
   transition: border-color .18s var(--ease), transform .18s var(--ease), box-shadow .18s var(--ease);
   position: relative;
 }
-.card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow-2); z-index: 5; }
 .card .row1 { display: flex; align-items: flex-start; gap: 10px; }
 .card .favicon {
   width: 32px; height: 32px; border-radius: 8px; flex: none;
@@ -321,7 +321,7 @@ button { font-family: inherit; cursor: pointer; }
 .menu-item.move-item:disabled:hover { background: transparent; color: var(--fg-2); }
 .menu-item .move-label { display: inline-flex; align-items: center; gap: 8px; }
 .menu-item .arrow { color: var(--fg-3); flex: none; }
-.move-list { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 4px; display: grid; gap: 2px; }
+.move-list { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 4px; display: grid; gap: 2px; max-height: 240px; overflow-y: auto; }
 .move-opt {
   display: flex; align-items: center; gap: 8px; width: 100%;
   padding: 7px 10px; border-radius: 6px; border: 0; background: transparent;
