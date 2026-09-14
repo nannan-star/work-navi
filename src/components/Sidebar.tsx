@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Project } from "./types";
 import { projectColorCss } from "@/lib/colors";
-import { LogoIcon, SearchIcon, CheckCircleIcon, NoteIcon, PlusIcon, SunIcon, MoonIcon } from "./icons";
+import { LogoIcon, SearchIcon, CheckCircleIcon, NoteIcon, PlusIcon, SunIcon, MoonIcon, GripIcon } from "./icons";
 
 export default function Sidebar({
   projects,
@@ -16,6 +16,7 @@ export default function Sidebar({
   onShowTasks,
   onSelectProject,
   onNewProject,
+  onReorderProjects,
 }: {
   projects: Project[];
   view: "project" | "tasks" | "notes";
@@ -27,8 +28,11 @@ export default function Sidebar({
   onShowTasks: () => void;
   onSelectProject: (id: string) => void;
   onNewProject: () => void;
+  onReorderProjects: (ids: string[]) => void;
 }) {
   const searchRef = useRef<HTMLInputElement>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   // 主题切换: 内联脚本可能在 hydration 前已设置 data-theme,这里同步一次。
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -60,6 +64,39 @@ export default function Sidebar({
 
   const q = query.trim().toLowerCase();
   const filtered = q ? projects.filter((p) => p.name.toLowerCase().includes(q)) : projects;
+
+  // 搜索过滤后列表只是子集,此时重排会打乱其余项目的顺序 —— 过滤状态下禁用拖拽。
+  const dragActive = !q;
+
+  function handleDragStart(e: React.DragEvent, id: string) {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  }
+
+  function handleDragOver(e: React.DragEvent, id: string) {
+    e.preventDefault();
+    if (dragId && dragId !== id) setOverId(id);
+  }
+
+  function handleDrop(e: React.DragEvent, id: string) {
+    e.preventDefault();
+    if (!dragId || dragId === id) return;
+    const ids = projects.map((p) => p.id);
+    const from = ids.indexOf(dragId);
+    const to = ids.indexOf(id);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, dragId);
+    onReorderProjects(ids);
+    setDragId(null);
+    setOverId(null);
+  }
+
+  function handleDragEnd() {
+    setDragId(null);
+    setOverId(null);
+  }
 
   return (
     <aside className="sidebar" aria-label="项目导航">
@@ -115,13 +152,27 @@ export default function Sidebar({
 
       <ul className="proj-list">
         {filtered.map((p) => (
-          <li key={p.id}>
+          <li
+            key={p.id}
+            className={`${dragId === p.id ? "dragging" : ""}${overId === p.id ? " drag-over" : ""}`}
+            draggable={dragActive}
+            onDragStart={(e) => handleDragStart(e, p.id)}
+            onDragOver={(e) => handleDragOver(e, p.id)}
+            onDragLeave={() => setOverId((v) => (v === p.id ? null : v))}
+            onDrop={(e) => handleDrop(e, p.id)}
+            onDragEnd={handleDragEnd}
+          >
             <button
               className={`proj-item${view === "project" && activeProjectId === p.id ? " active" : ""}`}
               onClick={() => onSelectProject(p.id)}
             >
               <span className="dot" style={{ background: projectColorCss(p.color) }} />
               <span className="name">{p.name}</span>
+              {dragActive && (
+                <span className="grip" title="拖拽排序" aria-hidden="true">
+                  <GripIcon size={14} />
+                </span>
+              )}
               <span className="n">{p.resources?.length ?? 0}</span>
             </button>
           </li>

@@ -334,6 +334,22 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     }
   }
 
+  // 先本地重排(乐观更新),失败再回滚到原顺序。
+  async function reorderProjects(ids: string[]) {
+    const prev = projects;
+    const byId = new Map(projects.map((p) => [p.id, p]));
+    const next = ids.map((id) => byId.get(id)).filter((p): p is Project => !!p);
+    if (next.length !== ids.length) return; // 数据不一致,放弃本次排序
+
+    setProjects(next.map((p, i) => ({ ...p, order: i })));
+    try {
+      await api("/api/projects", { method: "PUT", body: JSON.stringify({ ids }) });
+    } catch (e) {
+      setProjects(prev);
+      notify((e as Error).message, true);
+    }
+  }
+
   // ---- 视图/弹窗开关 ----
   function selectProject(id: string) {
     setActiveProjectId(id);
@@ -357,6 +373,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           onShowTasks={() => setView("tasks")}
           onSelectProject={selectProject}
           onNewProject={() => setProjectModal({ mode: "create" })}
+          onReorderProjects={reorderProjects}
         />
 
         <div className="main" id="main">

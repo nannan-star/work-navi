@@ -201,6 +201,12 @@ button { font-family: inherit; cursor: pointer; }
 .proj-item .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .proj-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .proj-item .n { font-size: 11px; color: var(--fg-3); font-family: var(--font-mono), ui-monospace, Menlo, monospace; }
+/* 拖拽手柄常驻占位,悬停/拖拽时才显形,避免行内文字宽度跳动 */
+.proj-item .grip { flex: none; color: var(--fg-3); opacity: 0; transition: opacity .15s var(--ease); cursor: grab; }
+.proj-item:hover .grip, .proj-item:focus-visible .grip, .proj-list > li.dragging .grip { opacity: .9; }
+.proj-item .grip:active { cursor: grabbing; }
+.proj-list > li.dragging .proj-item { opacity: .45; }
+.proj-list > li.drag-over .proj-item { background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--primary); }
 
 .side-foot { padding: 12px; border-top: 1px solid var(--border); }
 .btn-new {
