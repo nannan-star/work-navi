@@ -39,7 +39,7 @@ npm run db:seed
 npm run dev
 ```
 
-打开 <http://localhost:3000> 即可使用。
+打开 <http://localhost:3003> 即可使用。
 
 ## 常用命令
 

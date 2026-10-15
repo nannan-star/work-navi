@@ -4,7 +4,7 @@
 #   ./deploy.sh              # 生产部署:安装依赖 → 初始化数据库 → 构建 → 后台启动(脱离窗口,仅关机停止)
 #   ./deploy.sh --dev        # 开发模式:npm run dev(热更新)
 #   ./deploy.sh --seed       # 部署前先重置并写入演示数据(会清空现有数据!)
-#   ./deploy.sh --port 3001  # 指定端口(默认 3000)
+#   ./deploy.sh --port 3001  # 指定端口(默认 3003)
 
 set -euo pipefail
 
@@ -13,7 +13,7 @@ cd "$(dirname "$0")"
 
 MODE="prod"
 SEED=false
-PORT=3000
+PORT=3003
 
 # 解析参数
 while [[ $# -gt 0 ]]; do
